@@ -45,10 +45,56 @@ impl LamExpr {
                     None => None,
                 }
             //LamExpr::App { func: LamExpr::L { lexpr, ..  }, oprd } =>
-            _ => Some(LamExpr::V{ idx: 0 }),
+            _ => Some(LamExpr::V{ idx: 0 }),    // ToDo
+        }
+    }
+
+//    fn subst(&self, vIdx: u32, e: LamExpr) -> Option<LamExpr> {
+//        match self {
+//            LamExpr::V { v } if v == vIdx => Some(e),
+//            LamExpr::V { v } if v >  vIdx => Some(LamExpr::V { idx: v - 1}),
+//            LamExpr::V { v }              => None,
+//            LamExpr::L { lexp, .. } => {
+//                    
+//                }
+//
+//        }
+//    }
+
+    fn deepen(&self, vIdx: u32) -> Option<LamExpr> {
+        match self {
+            LamExpr::V { v } if v >= vIdx => Some(LamExpr::V { idx: v + 1 }),
+            LamExpr::V { v }              => None,
+            LamExpr::L { lexp, .. } => ap(lc, lexp.deepen(vIdx + 1)),
+            LamExpr::App { func, oprd, .. } =>
+                merge_app(|e| deepen(vIdx + 1, e), func, oprd),
+            _ => None,
+            
+        }
+    }
+
+    fn merge_app(f: fn(&LamExpr) -> Option<LamExpr>, x: &LamExpr, y: &LamExpr)
+        -> Option<LamExpr> {
+        match f(x) {
+            Some(xx) => match f(y) {
+                Some(yy) => Some(xx * yy),
+                None    => Some(xx * y.clone()),
+            },
+            None => match f(y) {
+                Some(yy) => Some(x.clone() * yy),
+                None    => Some(x.clone() * y.clone()),
+            },
         }
     }
 }
+
+fn ap<T>(f: fn(T) -> T, x: Option<T>) -> Option<T> {
+    match x {
+        Some(x) => Some(f(x)),
+        None => None,
+    }
+}
+
 
 impl Mul for LamExpr {
     type Output = Self;
