@@ -2,7 +2,7 @@ use std::ops::Mul;
 use std::rc::Rc;
 
 #[derive(Debug)]
-enum LamExpr {
+pub enum LamExpr {
     V  {
         idx: u32,       // De Bruijn index
     },
@@ -36,6 +36,17 @@ impl LamExpr {
 
     fn lc(self) -> Self {
         LamExpr::L { size: 1 + self.len(), lexp: Rc::new(self) }
+    }
+
+    pub fn beta_red(&self) -> Option<Self> {
+        match self {
+            LamExpr::L { lexp, ..} => match lexp.beta_red() {
+                    Some(br) => Some(br.lc()),
+                    None => None,
+                }
+            //LamExpr::App { func: LamExpr::L { lexpr, ..  }, oprd } =>
+            _ => Some(LamExpr::V{ idx: 0 }),
+        }
     }
 }
 

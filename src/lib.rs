@@ -1,2 +1,2 @@
-mod lazy_k;
+pub mod lazy_k_core;
 
