@@ -41,9 +41,17 @@ impl LamExpr {
     pub fn beta_red(&self) -> Option<Self> {
         match self {
             LamExpr::L { lexp, ..} => ap(Self::lc, lexp.beta_red()),
-            //LamExpr::App { func: LamExpr::L { lexp, ..  }, oprd, .. } =>
-            //    Some(comple(|x| x.subst(1, oprd), lexp)),
-            //LamExpr::App { func, oprd, .. } =>
+            LamExpr::App { func, oprd, .. } =>
+                match &**func {
+                    LamExpr::L { lexp, ..  } =>
+                        Some(comple(|x| { x.subst(1, (**oprd).clone()) },
+                                    (**lexp).clone())),
+                    _ => match func.beta_red() {
+                            Some(f2) => Some(f2 * (**oprd).clone()),
+                            None => ap(|x| { (**func).clone() * x},
+                                        oprd.beta_red()),
+                        }
+                },
             _ => None,
         }
     }
@@ -58,7 +66,7 @@ impl LamExpr {
                 ap(Self::lc, lexp.subst(&thr + 1, comple(|x| x.deepen(1), e))),
             LamExpr::App { func, oprd, .. } =>
                 Self::merge_app(move |x| { x.subst(thr, e.clone()) },
-                                    (&(**func)).clone(), (&(**oprd)).clone()),
+                                    (&**func).clone(), (&**oprd).clone()),
             _ => None,
         }
     }
@@ -103,13 +111,13 @@ fn comple<F, T>(f: F, a: T) -> T
     }
 }
 
-fn ap<T>(f: fn(T) -> T, x: Option<T>) -> Option<T> {
+fn ap<F, T>(f: F, x: Option<T>) -> Option<T>
+        where F: Fn(T) -> T {
     match x {
         Some(x) => Some(f(x)),
         None => None,
     }
 }
-
 
 impl Mul for LamExpr {
     type Output = Self;
