@@ -40,51 +40,66 @@ impl LamExpr {
 
     pub fn beta_red(&self) -> Option<Self> {
         match self {
-            LamExpr::L { lexp, ..} => match lexp.beta_red() {
-                    Some(br) => Some(br.lc()),
-                    None => None,
-                }
-            //LamExpr::App { func: LamExpr::L { lexpr, ..  }, oprd } =>
-            _ => Some(LamExpr::V{ idx: 0 }),    // ToDo
+            LamExpr::L { lexp, ..} => ap(Self::lc, lexp.beta_red()),
+            //LamExpr::App { func: LamExpr::L { lexp, ..  }, oprd, .. } =>
+            //    Some(comple(|x| x.subst(1, oprd), lexp)),
+            //LamExpr::App { func, oprd, .. } =>
+            _ => None,
         }
     }
 
-//    fn subst(&self, vIdx: u32, e: LamExpr) -> Option<LamExpr> {
-//        match self {
-//            LamExpr::V { v } if v == vIdx => Some(e),
-//            LamExpr::V { v } if v >  vIdx => Some(LamExpr::V { idx: v - 1}),
-//            LamExpr::V { v }              => None,
-//            LamExpr::L { lexp, .. } => {
-//                    
-//                }
-//
-//        }
-//    }
-
-    fn deepen(&self, vIdx: u32) -> Option<LamExpr> {
+    fn subst(&self, thr: u32, e: LamExpr) -> Option<LamExpr> {
         match self {
-            LamExpr::V { v } if v >= vIdx => Some(LamExpr::V { idx: v + 1 }),
-            LamExpr::V { v }              => None,
-            LamExpr::L { lexp, .. } => ap(lc, lexp.deepen(vIdx + 1)),
+            LamExpr::V { idx } if idx == &thr => Some(e),
+            LamExpr::V { idx } if idx > &thr =>
+                                            Some(LamExpr::V { idx: idx - 1}),
+            LamExpr::V {..}              => None,
+            LamExpr::L { lexp, .. } =>
+                ap(Self::lc, lexp.subst(&thr + 1, comple(|x| x.deepen(1), e))),
             LamExpr::App { func, oprd, .. } =>
-                merge_app(|e| deepen(vIdx + 1, e), func, oprd),
+                Self::merge_app(move |x| { x.subst(thr, e.clone()) },
+                                    (&(**func)).clone(), (&(**oprd)).clone()),
+            _ => None,
+        }
+    }
+
+    fn deepen(&self, thr: u32) -> Option<LamExpr> {
+        match self {
+            LamExpr::V { idx } if idx >= &thr =>
+                                    Some(LamExpr::V { idx: idx + 1 }),
+            LamExpr::V {..}         => None,
+            LamExpr::L { lexp, .. } => ap(Self::lc, lexp.deepen(&thr + 1)),
+            LamExpr::App { func, oprd, .. } =>
+                Self::merge_app(move |x| { x.deepen(&thr + 1) },
+                                    (&(**func)).clone(), (&(**oprd)).clone()),
             _ => None,
             
         }
     }
 
-    fn merge_app(f: fn(&LamExpr) -> Option<LamExpr>, x: &LamExpr, y: &LamExpr)
-        -> Option<LamExpr> {
-        match f(x) {
-            Some(xx) => match f(y) {
+    fn merge_app<F>(f: F, x: LamExpr, y: LamExpr) -> Option<LamExpr>
+                where F: Fn(LamExpr) -> Option<LamExpr> {
+        let xs = x.clone();
+        let ys = y.clone();
+        match f(xs) {
+            Some(xx) => match f(ys) {
                 Some(yy) => Some(xx * yy),
                 None    => Some(xx * y.clone()),
             },
-            None => match f(y) {
+            None => match f(ys) {
                 Some(yy) => Some(x.clone() * yy),
                 None    => Some(x.clone() * y.clone()),
             },
         }
+    }
+}
+
+fn comple<F, T>(f: F, a: T) -> T
+        where F: Fn(T) -> Option<T>,
+              T: Clone {
+    match f(a.clone()) {
+        Some(x) => x,
+        None    => a,
     }
 }
 
@@ -129,20 +144,15 @@ impl ToString for LamExpr {
         match self {
             LamExpr::V { idx } => format!(" {}", idx),
             LamExpr::L { lexp, .. } =>
-                    if let Ok(v) = Rc::try_unwrap(lexp.clone()) {
-                        format!("\\ {}", v.to_string())
-                    } else {
-                        String::from("unexpected")
-                    }
+                    format!("\\ {}", (*lexp.clone()).to_string()),
             LamExpr::App { func, oprd, .. } => {
-                    let func = match Rc::try_unwrap(func.clone()) {
-                        Ok(LamExpr::L {..}) =>
-                                format!("({})", func.to_string()),
+                    let func = match *func.clone() {
+                        LamExpr::L {..} => format!("({})", func.to_string()),
                         _ => func.to_string(),
                     };
-                    let oprd = match Rc::try_unwrap(oprd.clone()) {
-                        Ok(LamExpr::V {..}) => oprd.to_string(),
-                        Ok(LamExpr::Nm {..}) => oprd.to_string(),
+                    let oprd = match *oprd.clone() {
+                        LamExpr::V {..} => oprd.to_string(),
+                        LamExpr::Nm {..} => oprd.to_string(),
                         _ => format!("({})", oprd.to_string()),
                     };
                     format!("{}{}", func, oprd)
