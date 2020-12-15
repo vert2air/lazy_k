@@ -149,11 +149,7 @@ impl LamExpr {
                     LamExpr::L { lexp, ..  } =>
                         Some(comple(|x| { x.subst(1, (**oprd).clone()) },
                                     (**lexp).clone())),
-                    _ => match func.beta_red() {
-                            Some(f2) => Some(f2 * (**oprd).clone()),
-                            None => ap(|x| { (**func).clone() * x},
-                                        oprd.beta_red()),
-                        }
+                    _ => LamExpr::lor(|x| x.beta_red(), func, oprd),
                 },
             _ => None,
         }
@@ -197,7 +193,7 @@ impl LamExpr {
     ///
     /// assert_eq!( ( i.clone() * i.clone() ).beta_red_cc(), Some(i.clone()) );
     /// ```
-    pub fn beta_red_cc(&self) -> Option<Self> {
+    pub fn beta_red_cc(&self) -> Option<LamExpr> {
         match self {
             LamExpr::App { func: f1, oprd: o1, .. } =>
                 match &**f1 {
@@ -212,26 +208,24 @@ impl LamExpr {
                                     LamExpr::Nm { name } if **name == "S" =>
                                         Some(((**o3).clone() * (**o1).clone())
                                             * ((**o2).clone() * (**o1).clone())),
-                                    _ => LamExpr::mlr(f1, o1),
+                                    _ => LamExpr::lor(|x| x.beta_red_cc(),
+                                                                        f1, o1),
                                 },
-                            _ => LamExpr::mlr(f1, o1),
+                            _ => LamExpr::lor(|x| x.beta_red_cc(), f1, o1),
                         },
-                    _ => LamExpr::mlr(f1, o1),
+                    _ => LamExpr::lor(|x| x.beta_red_cc(), f1, o1),
                 },
             LamExpr::Nm {..} => None,
             _ => None,
         }
     }
 
-    fn mlr(f: &LamExpr, o: &LamExpr) -> Option<LamExpr> {
-        match f.beta_red_cc() {
-            Some(f_r) => Some(f_r * o.clone()),
-            None => {
-                match o.beta_red_cc() {
-                    Some(o_r) => Some(f.clone() * o_r),
-                    None => None,
-                }
-            }
+    // leftmost-outermost reduction
+    fn lor<F>(red: F, func: &LamExpr, oprd: &LamExpr) -> Option<LamExpr>
+            where F: Fn(LamExpr) -> Option<LamExpr> {
+        match red(func.clone()) {
+            Some(f_r) => Some(f_r * oprd.clone()),
+            None => ap(|x| { func.clone() * x}, red(oprd.clone())),
         }
     }
 
