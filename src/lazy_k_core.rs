@@ -207,7 +207,7 @@ impl LamExpr {
                                 match &**f3 {
                                     LamExpr::Nm { name } if **name == "S" =>
                                         Some(((**o3).clone() * (**o1).clone())
-                                            * ((**o2).clone() * (**o1).clone())),
+                                           * ((**o2).clone() * (**o1).clone())),
                                     _ => LamExpr::lor(|x| x.beta_red_cc(),
                                                                         f1, o1),
                                 },
