@@ -149,7 +149,7 @@ impl LamExpr {
                     LamExpr::L { lexp, ..  } =>
                         Some(comple(|x| { x.subst(1, (**oprd).clone()) },
                                     (**lexp).clone())),
-                    _ => LamExpr::lor(|x| x.beta_red(), func, oprd),
+                    _ => Self::lor(|x| x.beta_red(), func, oprd),
                 },
             _ => None,
         }
@@ -208,12 +208,11 @@ impl LamExpr {
                                     LamExpr::Nm { name } if **name == "S" =>
                                         Some(((**o3).clone() * (**o1).clone())
                                            * ((**o2).clone() * (**o1).clone())),
-                                    _ => LamExpr::lor(|x| x.beta_red_cc(),
-                                                                        f1, o1),
+                                    _ => Self::lor(|x| x.beta_red_cc(), f1, o1),
                                 },
-                            _ => LamExpr::lor(|x| x.beta_red_cc(), f1, o1),
+                            _ => Self::lor(|x| x.beta_red_cc(), f1, o1),
                         },
-                    _ => LamExpr::lor(|x| x.beta_red_cc(), f1, o1),
+                    _ => Self::lor(|x| x.beta_red_cc(), f1, o1),
                 },
             LamExpr::Nm {..} => None,
             _ => None,
