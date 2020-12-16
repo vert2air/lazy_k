@@ -295,13 +295,24 @@ impl PLamExpr {
     // Abstruction Elimination
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, la, v, i, k, s};
+    /// fn test_sm(a: PLamExpr, b: PLamExpr) {
+    ///     assert_eq!( PLamExpr::abst_elim( &a ), Some( b ) );
+    /// }
     ///
-    /// if let Some(a) = PLamExpr::abst_elim( &la( la( v(1) * v(2) ) ) ) {
-    ///     assert_eq!(a.to_string(), " ".to_string());
+    /// let quiz = la( la( v(1) * v(2) ) );
+    /// if let Some(a) = PLamExpr::abst_elim( &quiz ) {
+    ///     //assert_eq!( a.to_string(), "if-clause".to_string());
     /// } else {
-    ///     assert_eq!( PLamExpr::abst_elim( &la( la( v(1) * v(2) ) ) ),
-    ///         Some( i() ));
-    ///         }
+    ///     //assert_eq!( quiz.to_string(), "else-clause".to_string());
+    /// }
+    /// assert_eq!( PLamExpr::abst_elim(&i()), None );
+    /// assert_eq!( PLamExpr::abst_elim(&v(2)), None );
+    /// test_sm( v(1)*v(2), v(1)*v(2) );
+    /// test_sm( la(v(1)) , i() );
+    /// test_sm( la(v(2)) , k()*v(1) );
+    /// test_sm( la(v(1)*v(1)) , s()*i()*i() );
+    /// test_sm( la( la( v(1) * v(2) ) ),
+    ///                         (s()*(k()*(s()*i())))*(s()*(k()*k())*i()) );
     /// ```
     pub fn abst_elim(org: &Self) -> Option<PLamExpr> {
         match &*org.0 {
@@ -364,7 +375,7 @@ impl PLamExpr {
 
     fn shallow(&self, thr: u32) -> Option<PLamExpr> {
         match &*self.0 {
-            LamExpr::V { idx } if *idx > thr => Some(v(idx - 1)),
+            LamExpr::V { idx } if *idx > thr => Some(v(*idx - 1)),
             LamExpr::V {..}                  => None,
             LamExpr::L { lexp, .. }          => ap(la, lexp.shallow(thr + 1)),
             LamExpr::App { func, oprd, .. }  =>
