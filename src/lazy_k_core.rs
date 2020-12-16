@@ -340,8 +340,8 @@ impl PLamExpr {
 
                 // Rule 5
                 LamExpr::L { lexp: inn, .. } if inn.has_var(2) => {
-                            let inn = comple(|x| Self::abst_elim(&x), &inn);
-                            Some( comple(|x| Self::abst_elim(&x), &la(inn)) )
+                            let lexp = comple(|x| Self::abst_elim(&x), &lexp);
+                            Some( comple(|x| Self::abst_elim(&x), &la(lexp)) )
                         },
                 LamExpr::L {..}                => panic!("out of rule 5"),
 
