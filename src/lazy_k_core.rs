@@ -7,11 +7,11 @@ pub enum LamExpr {
         idx: u32,       // De Bruijn index. 1, 2, 3, ... 0 isn't used.
     },
     L {                         // Lambda expression
-        size: u32,
+        size: usize,
         lexp: PLamExpr,
     },
     App {                       // Application
-        size: u32,
+        size: usize,
         func: PLamExpr,
         oprd: PLamExpr,
     },
@@ -19,12 +19,34 @@ pub enum LamExpr {
         name: Rc<String>,
     },
     Jot {                       // Jot
-        size: u32,
+        size: usize,
         jot: Rc<String>,
     },
 }
 
 pub struct PLamExpr(Rc<LamExpr>);
+
+#[derive(Eq, PartialEq, Debug)]
+pub enum LamExprStyle {
+    Lambda,
+    CC,
+    Iota,
+    Jot,
+}
+
+// n: "I", "K", or "S" for Combinator and Unlamda style,
+//     or "iota" for Iota Style.
+pub fn nm(n: &str) -> PLamExpr {
+    PLamExpr(Rc::new(LamExpr::Nm { name: Rc::new(n.to_string()) }))
+}
+pub fn i()    -> PLamExpr { nm("I") }
+pub fn k()    -> PLamExpr { nm("K") }
+pub fn s()    -> PLamExpr { nm("S") }
+pub fn iota() -> PLamExpr { nm("iota") }
+pub fn lam_i()    -> PLamExpr { la( v(1) ) }
+pub fn lam_k()    -> PLamExpr { la( la( v(2) ) ) }
+pub fn lam_s()    -> PLamExpr { la( la( la( (v(3)*v(1)) * (v(2)*v(1)) ) ) ) }
+pub fn lam_iota() -> PLamExpr { la( v(1) * lam_s() * lam_k() ) }
 
 pub fn v(i: u32) -> PLamExpr {
     assert!( i != 0, "De Bruijn index should take positive number." );
@@ -38,15 +60,14 @@ pub fn la(e: PLamExpr) -> PLamExpr {
                 }))
 }
 
-// n: "I", "K", or "S" for Combinator and Unlamda style,
-//     or "iota" for Iota Style.
-pub fn nm(n: &str) -> PLamExpr {
-    PLamExpr(Rc::new(LamExpr::Nm { name: Rc::new(n.to_string()) }))
+pub fn jot(j: &str) -> PLamExpr {
+    match j.to_string().chars()
+            .filter(|c| { *c == '0' || *c == '1' }).collect::<String>() {
+        e if e.len() > 0 =>
+            PLamExpr(Rc::new(LamExpr::Jot { size: e.len(), jot: Rc::new(e) })),
+        _ => panic!("Unexpected String for Jot style"),
+    }
 }
-pub fn i() -> PLamExpr { nm("I") }
-pub fn k() -> PLamExpr { nm("K") }
-pub fn s() -> PLamExpr { nm("S") }
-pub fn iota() -> PLamExpr { nm("iota") }
 
 impl PLamExpr {
 
@@ -56,12 +77,49 @@ impl PLamExpr {
         PLamExpr(Rc::clone(&a.0))
     }
 
-    fn len(&self) -> u32 {
+    fn len(&self) -> usize {
         match *self.0 {
             LamExpr::L { size, .. } => size,
             LamExpr::App { size, .. } => size,
             LamExpr::Jot { size, .. } => size,
             _ => 1,
+        }
+    }
+
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{LamExprStyle, i, k, s, iota, v, la, jot};
+    ///
+    /// assert_eq!( ( s() * k() * k() * s() ).check_style(),
+    ///                                         Some(LamExprStyle::CC));
+    /// assert_eq!( jot("11100").check_style(), Some(LamExprStyle::Jot));
+    /// assert_eq!( la( v(1) * la( v(1) * v(2) ) ).check_style(),
+    ///                                         Some(LamExprStyle::Lambda));
+    /// assert_eq!( ( iota() * (iota() * iota()) ).check_style(),
+    ///                                         Some(LamExprStyle::Iota));
+    ///
+    /// assert_eq!( ( k() * la( v(1) * s() ) ).check_style(),    None);
+    /// assert_eq!( (jot("11100") * jot("11100")).check_style(), None);
+    /// ```
+    pub fn check_style(&self) -> Option<LamExprStyle> {
+        match &*self.0 {
+            LamExpr::Nm { name }
+                if **name == "I" || **name == "K" || **name == "S" =>
+                                Some(LamExprStyle::CC),
+            LamExpr::Nm { name } if **name == "iota" =>
+                                Some(LamExprStyle::Iota),
+            LamExpr::Jot {..} => Some(LamExprStyle::Jot),
+            LamExpr::V {..}   => Some(LamExprStyle::Lambda),
+            LamExpr::L {..}   => Some(LamExprStyle::Lambda),
+            LamExpr::App { func, oprd, .. } => {
+                let f = func.check_style();
+                let o = oprd.check_style();
+                if f == o && f != Some(LamExprStyle::Jot) {
+                    f
+                } else {
+                    None
+                }
+            },
+            _ => None,
         }
     }
 
@@ -192,6 +250,39 @@ impl PLamExpr {
         }
     }
 
+
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, iota, k, s };
+    /// use crate::lazy_k::lazy_k_core::{lam_iota, lam_k, lam_s};
+    ///
+    /// assert_eq!( (s() * k() * (iota() * iota())).to_lambda(),
+    ///         lam_s() * lam_k() * (lam_iota() * lam_iota()) );
+    /// ```
+    pub fn to_lambda(&self) -> Self {
+        match &*self.0 {
+            LamExpr::V { idx }                    => v(*idx),
+            LamExpr::Nm { name } if **name == "I" => lam_i(),
+            LamExpr::Nm { name } if **name == "K" => lam_k(),
+            LamExpr::Nm { name } if **name == "S" => lam_s(),
+            LamExpr::Nm { name } if **name == "iota" => lam_iota(),
+            LamExpr::Nm {..} => panic!("can't xlate to_lambda: Nm"),
+            LamExpr::Jot { jot, .. }        => Self::jot_to_lambda(&**jot),
+            LamExpr::L { lexp, .. }         => la( lexp.to_lambda() ),
+            LamExpr::App { func, oprd, .. } =>
+                                    func.to_lambda() * oprd.to_lambda(),
+        }
+    }
+
+    fn jot_to_lambda(jot: &str) -> Self {
+        jot.chars().fold( lam_i(), |acc, j| {
+            match j {
+                '0' => acc * lam_s() * lam_k(),
+                '1' => la( la( acc * ( v(2) * v(1) ))),
+                _ => acc,
+            }
+        })
+    }
+
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, v, la};
     ///
@@ -299,20 +390,13 @@ impl PLamExpr {
     ///     assert_eq!( PLamExpr::abst_elim( &a ), Some( b ) );
     /// }
     ///
-    /// let quiz = la( la( v(1) * v(2) ) );
-    /// if let Some(a) = PLamExpr::abst_elim( &quiz ) {
-    ///     //assert_eq!( a.to_string(), "if-clause".to_string());
-    /// } else {
-    ///     //assert_eq!( quiz.to_string(), "else-clause".to_string());
-    /// }
     /// assert_eq!( PLamExpr::abst_elim(&i()), None );
     /// assert_eq!( PLamExpr::abst_elim(&v(2)), None );
     /// test_sm( v(1)*v(2), v(1)*v(2) );
     /// test_sm( la(v(1)) , i() );
     /// test_sm( la(v(2)) , k()*v(1) );
     /// test_sm( la(v(1)*v(1)) , s()*i()*i() );
-    /// test_sm( la( la( v(1) * v(2) ) ),
-    ///                         (s()*(k()*(s()*i())))*(s()*(k()*k())*i()) );
+    /// test_sm( la( la( v(1) * v(2) ) ), (s()*(k()*(s()*i())))*k() );
     /// ```
     pub fn abst_elim(org: &Self) -> Option<PLamExpr> {
         match &*org.0 {
@@ -415,6 +499,68 @@ fn ap<F, T>(f: F, x: Option<T>) -> Option<T>
         Some(x) => Some(f(x)),
         None => None,
     }
+}
+
+/// ```
+/// use crate::lazy_k::lazy_k_core::step_n;
+///
+/// fn dec(x: &u32) -> Option<u32> {
+///     if(*x > 0) {
+///         Some(x - 1)
+///     } else {
+///         None
+///     }
+/// }
+/// assert_eq!( step_n( 2, 10, dec), 8 );
+/// assert_eq!( step_n(12, 10, dec), 0 );
+/// ```
+pub fn step_n<F, T>(cnt_max: u32, init: T, f: F) -> T
+        where F: Fn(&T) -> Option<T> {
+    let mut a = init;
+    for _ in 0..cnt_max {
+        match f(&a) {
+            Some(a1) => a = a1,
+            None => break,
+        }
+    }
+    a
+}
+
+/// ```
+/// use crate::lazy_k::lazy_k_core::apply_fully;
+///
+/// fn dec(x: &u32) -> Option<u32> {
+///     if(*x > 1) {
+///         Some(x - 1)
+///     } else {
+///         None
+///     }
+/// }
+/// fn check(x: &u32) -> Option<String> {
+///     if *x % 10 == 0 {
+///         Some("Error: X0".to_string())
+///     } else {
+///         None
+///     }
+/// }
+/// assert_eq!( apply_fully( 7, 12, dec, check), Err((11, 6, "Error: X0".to_string()) ));
+/// assert_eq!( apply_fully( 3, 15, dec, check), Err((12, 0, "Time Limit".to_string() ) ));
+/// assert_eq!( apply_fully( 9,  8, dec, check), Ok((1, 2) ));
+/// ```
+pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
+                        -> Result<(T, u32), (T, u32, String)>
+        where F: Fn(&T) -> Option<T>, G: Fn(&T) -> Option<String> {
+    let mut a = init;
+    for c in (1..cnt_max + 1).rev() {
+        match apply( &a ) {
+            None     => return Ok((a, c)),
+            Some(a1) => match check( &a1 ) {
+                None      => a = a1,
+                Some(msg) => return Err((a, c, msg)),
+            }
+        }
+    }
+    Err((a, 0, "Time Limit".to_string()))
 }
 
 impl PartialEq for PLamExpr {
