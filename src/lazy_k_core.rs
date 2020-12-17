@@ -585,6 +585,8 @@ impl PartialEq for PLamExpr {
     }
 }
 
+impl Eq for PLamExpr {}
+
 impl Mul for PLamExpr {
     type Output = Self;
 
@@ -646,6 +648,23 @@ impl fmt::Debug for PLamExpr {
                     .field("size", &size)
                     .field("jot", &jot)
                     .finish(),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+struct ChNumEval(PLamExpr);
+
+impl ChNumEval {
+    fn to_ch_num_eval(e: PLamExpr) -> ChNumEval {
+        ChNumEval( e * nm("plus1") * v(0) )
+    }
+
+    fn eval_cc(&self, b: bool) -> Option<Self> {
+        match &*self.0.0 {
+            LamExpr::App { func, oprd, .. } => None,    // ToDo
+            
+            _ => None,
         }
     }
 }
