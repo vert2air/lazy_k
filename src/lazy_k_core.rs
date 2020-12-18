@@ -71,12 +71,6 @@ pub fn jot(j: &str) -> PLamExpr {
 
 impl PLamExpr {
 
-    // The cost of Cloning of PLamExpr is very low.
-    // So we should take "PLamExpr::clone(&x)" style insted of "x.clone()".
-    pub fn clone(a: &PLamExpr) -> PLamExpr {
-        PLamExpr(Rc::clone(&a.0))
-    }
-
     fn len(&self) -> usize {
         match *self.0 {
             LamExpr::L { size, .. } => size,
@@ -404,11 +398,11 @@ impl PLamExpr {
             LamExpr::V   {..} => None,   // Rule 1
             LamExpr::Jot {..} => None,   // Rule 1
             LamExpr::App { func, oprd, ..} =>
-                Self::merge_app(|x| Self::abst_elim(&x), func, oprd), // Rule 2
+                Self::merge_app(|x: &Self| Self::abst_elim(x), func, oprd), // Rule 2
 
             // Rule 3. T[\x.E] => K T[E] if x is NOT free in E
             LamExpr::L { lexp, .. } if ! lexp.has_var(1) => {
-                            let lexp = comple(|x| Self::abst_elim(&x), &lexp);
+                            let lexp = comple(|x| Self::abst_elim(x), lexp);
                             let lexp = comple(|x| x.shallow(1), &lexp);
                             Some(k() * lexp)
                         },
@@ -424,7 +418,7 @@ impl PLamExpr {
 
                 // Rule 5
                 LamExpr::L { lexp: inn, .. } if inn.has_var(2) => {
-                            let lexp = comple(|x| Self::abst_elim(&x), &lexp);
+                            let lexp = comple(|x| Self::abst_elim(x), lexp);
                             Some( comple(|x| Self::abst_elim(&x), &la(lexp)) )
                         },
                 LamExpr::L {..}                => panic!("out of rule 5"),
@@ -468,16 +462,16 @@ impl PLamExpr {
         }
     }
 
-    fn merge_app<F>(f: F, x: &PLamExpr, y: &PLamExpr) -> Option<PLamExpr>
-                where F: Fn(PLamExpr) -> Option<PLamExpr> {
+    fn merge_app<'a, F>(f: F, x: &'a PLamExpr, y: &'a PLamExpr) -> Option<PLamExpr>
+                where F: Fn(&PLamExpr) -> Option<PLamExpr> {
         let xs = Self::clone(x);
         let ys = Self::clone(y);
-        match f(xs) {
-            Some(xx) => match f(ys) {
+        match f(&xs) {
+            Some(xx) => match f(&ys) {
                 Some(yy) => Some(xx * yy),
                 None    => Some(xx * Self::clone(y)),
             },
-            None => match f(ys) {
+            None => match f(&ys) {
                 Some(yy) => Some(Self::clone(x) * yy),
                 None    => Some(Self::clone(x) * Self::clone(y)),
             },
@@ -485,11 +479,11 @@ impl PLamExpr {
     }
 }
 
-fn comple<F>(f: F, a: &PLamExpr) -> PLamExpr
-        where F: Fn(&PLamExpr) -> Option<PLamExpr> {
+fn comple<F, T>(f: F, a: &T) -> T
+        where F: Fn(&T) -> Option<T>, T: Clone {
     match f(a) {
         Some(x) => x,
-        None    => PLamExpr::clone(a),
+        None    => T::clone(a),
     }
 }
 
@@ -561,6 +555,12 @@ pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
         }
     }
     Err((a, 0, "Time Limit".to_string()))
+}
+
+impl Clone for PLamExpr {
+    fn clone(&self) -> Self {
+        PLamExpr(Rc::clone(&self.0))
+    }
 }
 
 impl PartialEq for PLamExpr {
@@ -652,7 +652,7 @@ impl fmt::Debug for PLamExpr {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 struct ChNumEval(PLamExpr);
 
 impl ChNumEval {
@@ -662,27 +662,28 @@ impl ChNumEval {
 
     fn eval_cc(&self, b: bool) -> Option<Self> {
         match &*self.0.0 {
-            LamExpr::App { func, oprd, .. } => match &*func.0 {
+            LamExpr::App { func: f0, oprd: o0, .. } => match &*f0.0 {
                 LamExpr::Nm { name } if **name == "I" =>
-                    Some(comple(|x| x.eval_cc(false), &ChNumEval(PLamExpr::clone(oprd)))),
-                LamExpr::Nm { name } if **name == "plus1" => match &*oprd.0.0 {
+                    Some(comple(|x| x.eval_cc(false), &ChNumEval(PLamExpr::clone(o0)))),
+                LamExpr::Nm { name } if **name == "plus1" => match &*o0.0 {
                     LamExpr::V { idx } => Some( ChNumEval(v(*idx + 1)) ),
                     _ => ap(|x| ChNumEval( nm("plus1") * x.0 ), 
-                            ChNumEval(oprd).eval_cc(b)),
+                            ChNumEval(PLamExpr::clone(o0)).eval_cc(b)),
                 }
-                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0.0 {
+                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                     LamExpr::Nm { name } if **name == "K" =>
-                        Some(comple(|x| x.eval_cc(false), ChNumEval(o1))),
-                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0.0 {
+                        Some(comple(|x| x.eval_cc(false),
+                                    &ChNumEval(PLamExpr::clone(o1)))),
+                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
                         LamExpr::Nm { name } if **name == "S" => {
-                            let x1 = ChNumEval(oprd).eval_cc(false);
-                            let y1 = ChNumEval(o1).eval_cc(false);
-                            let z1 = ChNumEval(o2).eval_cc(false);
-                            let x2 = x1.map_or(oprd, |p| p.0);
-                            let y2 = y1.map_or(o1, |p| p.0);
-                            let z2 = z1.map_or(o2, |p| p.0);
+                            let x1 = ChNumEval(PLamExpr::clone(o0)).eval_cc(false);
+                            let y1 = ChNumEval(PLamExpr::clone(o1)).eval_cc(false);
+                            let z1 = ChNumEval(PLamExpr::clone(o2)).eval_cc(false);
+                            let x2 = PLamExpr::clone(&x1.clone().map_or(PLamExpr::clone(o0), |p| p.0));
+                            let y2 = PLamExpr::clone(&y1.clone().map_or(PLamExpr::clone(o1), |p| p.0));
+                            let z2 = PLamExpr::clone(&z1.clone().map_or(PLamExpr::clone(o2), |p| p.0));
                             if b {
-                                Some(ChNumEval( x2 * z2 * (y2 * z2) ))
+                                Some(ChNumEval( x2 * z2.clone() * (y2 * z2) ))
                             } else if x1 == None && y1 == None && z1 == None {
                                 None
                             } else {
@@ -699,24 +700,28 @@ impl ChNumEval {
         }
     }
 
-    fn others(&self, b: bool) {
-        let LamExpr::App { func: f0, oprd: o0, .. } = *self.0.0;
-        if b {
-            match ChNumEval(f0).eval_cc(true) {
-                Some(ChNumEval(a)) => Some(ChNumEval(a * o0)),
-                _ => match ChNumEval(o0).eval_cc(true) {
-                    Some(ChNumEval(b)) => Some(ChNumEval(f0 * b)),
-                    _ => None,
+    fn others(&self, b: bool) -> Option<Self> {
+        match &*self.0.0 {
+            LamExpr::App { func: f0, oprd: o0, .. } =>
+                if b {
+                    match ChNumEval(f0.clone()).eval_cc(true) {
+                        Some(ChNumEval(a)) => Some(ChNumEval(a * o0.clone())),
+                        _ => match ChNumEval(o0.clone()).eval_cc(true) {
+                            Some(ChNumEval(b)) => Some(ChNumEval(f0.clone() * b)),
+                            _ => None,
+                        },
+                    }
+                } else {
+                    let f1 = ChNumEval(f0.clone()).eval_cc(false);
+                    let o1 = ChNumEval(o0.clone()).eval_cc(false);
+                    if f1 == None  && o1 == None {
+                        None
+                    } else {
+                        Some(ChNumEval(f1.map_or(f0.clone(), |p| p.0)
+                                    * o1.map_or(o0.clone(), |p| p.0)))
+                    }
                 },
-            }
-        } else {
-            let f1 = ChNumEval(f0).eval_cc(false);
-            let o1 = ChNumEval(o0).eval_cc(false);
-            if f1 == None  && o1 == None {
-                None
-            } else {
-                Some(ChNumEval(f1.map_or(f0, |p| p.0) * o1.map_or(o0, |p| p.0)))
-            }
+            _ => panic!("ChNumEval::others received value other than App."),
         }
     }
 }
