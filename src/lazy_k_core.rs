@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops::Mul;
 use std::rc::Rc;
 
+#[derive(Eq, PartialEq)]
 pub enum LamExpr {
     V  {
         idx: u32,       // De Bruijn index. 1, 2, 3, ... 0 isn't used.
@@ -477,6 +478,29 @@ impl PLamExpr {
             },
         }
     }
+
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval};
+    ///
+    /// let chnum = la( la( v(2) * v(1) ) );
+    /// let n = ChNumEval::to_ch_num_eval( chnum .clone());
+    /// let n = n.eval_cc(true);
+    /// if let Some(n) = n {
+    ///     assert_eq!( *n.0.0, Some(LamExpr::V{ idx: 1 }) );
+    /// } else {
+    ///     assert_eq!( None, Some(LamExpr::V{ idx: 1 }) );
+    /// }
+    ///
+    /// assert_eq!( la( la( v(2) * v(1) ) ).get_num(), Some(1) );
+    /// ```
+    pub fn get_num(&self) -> Option<u32> {
+        let cn = step_n(5_000, ChNumEval::to_ch_num_eval(self.clone()),
+                                |x| x.eval_cc(true));
+        match &*cn.0.0 {
+            LamExpr::V { idx } => Some(*idx),
+            _ => None,
+        }
+    }
 }
 
 fn comple<F, T>(f: F, a: &T) -> T
@@ -652,15 +676,47 @@ impl fmt::Debug for PLamExpr {
     }
 }
 
+impl fmt::Debug for LamExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            LamExpr::V { idx } =>
+                f.debug_struct("LamExpr::V")
+                    .field("idx", &idx)
+                    .finish(),
+            LamExpr::L { size, lexp } =>
+                f.debug_struct("LamExpr::L")
+                    .field("size", &size)
+                    .field("lexp", &lexp)
+                    .finish(),
+            LamExpr::App { size, func, oprd } =>
+                f.debug_struct("LamExpr::App")
+                    .field("size", &size)
+                    .field("func", &func)
+                    .field("oprd", &oprd)
+                    .finish(),
+            LamExpr::Nm { name } =>
+                f.debug_struct("LamExpr::Nm")
+                    .field("name", &name)
+                    .finish(),
+            LamExpr::Jot { size, jot } =>
+                f.debug_struct("LamExpr::Jot")
+                    .field("size", &size)
+                    .field("jot", &jot)
+                    .finish(),
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug)]
-struct ChNumEval(PLamExpr);
+pub struct ChNumEval(PLamExpr);
 
 impl ChNumEval {
-    fn to_ch_num_eval(e: PLamExpr) -> ChNumEval {
-        ChNumEval( e * nm("plus1") * v(0) )
+    pub fn to_ch_num_eval(e: PLamExpr) -> ChNumEval {
+        let v0 = PLamExpr(Rc::new(LamExpr::V { idx: 0 }));
+        ChNumEval( e * nm("plus1") * v0 )
     }
 
-    fn eval_cc(&self, b: bool) -> Option<Self> {
+    pub fn eval_cc(&self, b: bool) -> Option<Self> {
         match &*self.0.0 {
             LamExpr::App { func: f0, oprd: o0, .. } => match &*f0.0 {
                 LamExpr::Nm { name } if **name == "I" =>
