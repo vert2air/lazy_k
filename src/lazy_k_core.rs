@@ -662,9 +662,61 @@ impl ChNumEval {
 
     fn eval_cc(&self, b: bool) -> Option<Self> {
         match &*self.0.0 {
-            LamExpr::App { func, oprd, .. } => None,    // ToDo
-            
+            LamExpr::App { func, oprd, .. } => match &*func.0 {
+                LamExpr::Nm { name } if **name == "I" =>
+                    Some(comple(|x| x.eval_cc(false), &ChNumEval(PLamExpr::clone(oprd)))),
+                LamExpr::Nm { name } if **name == "plus1" => match &*oprd.0.0 {
+                    LamExpr::V { idx } => Some( ChNumEval(v(*idx + 1)) ),
+                    _ => ap(|x| ChNumEval( nm("plus1") * x.0 ), 
+                            ChNumEval(oprd).eval_cc(b)),
+                }
+                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0.0 {
+                    LamExpr::Nm { name } if **name == "K" =>
+                        Some(comple(|x| x.eval_cc(false), ChNumEval(o1))),
+                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0.0 {
+                        LamExpr::Nm { name } if **name == "S" => {
+                            let x1 = ChNumEval(oprd).eval_cc(false);
+                            let y1 = ChNumEval(o1).eval_cc(false);
+                            let z1 = ChNumEval(o2).eval_cc(false);
+                            let x2 = x1.map_or(oprd, |p| p.0);
+                            let y2 = y1.map_or(o1, |p| p.0);
+                            let z2 = z1.map_or(o2, |p| p.0);
+                            if b {
+                                Some(ChNumEval( x2 * z2 * (y2 * z2) ))
+                            } else if x1 == None && y1 == None && z1 == None {
+                                None
+                            } else {
+                                Some(ChNumEval(s() * x2 * y2 * z2))
+                            }
+                        },
+                        _ => self.others(b)
+                    }
+                    _ => self.others(b)
+                },
+                _ => self.others(b)
+            },
             _ => None,
+        }
+    }
+
+    fn others(&self, b: bool) {
+        let LamExpr::App { func: f0, oprd: o0, .. } = *self.0.0;
+        if b {
+            match ChNumEval(f0).eval_cc(true) {
+                Some(ChNumEval(a)) => Some(ChNumEval(a * o0)),
+                _ => match ChNumEval(o0).eval_cc(true) {
+                    Some(ChNumEval(b)) => Some(ChNumEval(f0 * b)),
+                    _ => None,
+                },
+            }
+        } else {
+            let f1 = ChNumEval(f0).eval_cc(false);
+            let o1 = ChNumEval(o0).eval_cc(false);
+            if f1 == None  && o1 == None {
+                None
+            } else {
+                Some(ChNumEval(f1.map_or(f0, |p| p.0) * o1.map_or(o0, |p| p.0)))
+            }
         }
     }
 }
