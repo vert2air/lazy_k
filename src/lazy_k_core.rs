@@ -25,6 +25,22 @@ pub enum LamExpr {
     },
 }
 
+impl Clone for LamExpr {
+    fn clone(&self) -> Self {
+        match self {
+            LamExpr::V { idx } => LamExpr::V { idx: *idx },
+            LamExpr::L { size, lexp } =>
+                                LamExpr::L { size: *size, lexp: lexp.clone() },
+            LamExpr::App { size, func, oprd } =>
+                            LamExpr::App { size: *size, func: func.clone(),
+                                                        oprd: oprd.clone() },
+            LamExpr::Nm  { name } => LamExpr::Nm { name: name.clone() },
+            LamExpr::Jot { size, jot } =>
+                                LamExpr::Jot { size: *size, jot: jot.clone() },
+        }
+    }
+}
+
 pub struct PLamExpr(Rc<LamExpr>);
 
 #[derive(Eq, PartialEq, Debug)]
@@ -480,13 +496,15 @@ impl PLamExpr {
     }
 
     /// ```
-    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval};
+    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval, s, k, i};
     ///
-    /// let chnum = la( la( v(2) * v(1) ) );
+    /// //let chnum = la( la( v(2) * v(1) ) );
+    /// let chnum = i();
     /// let n = ChNumEval::to_ch_num_eval( chnum .clone());
+    /// //assert_eq!( n, ChNumEval::new(&i()) );
     /// let n = n.eval_cc(true);
     /// if let Some(n) = n {
-    ///     assert_eq!( *n.0.0, Some(LamExpr::V{ idx: 1 }) );
+    ///     assert_eq!( n.debug(), v(1) );
     /// } else {
     ///     assert_eq!( None, Some(LamExpr::V{ idx: 1 }) );
     /// }
@@ -623,9 +641,9 @@ impl Mul for PLamExpr {
     }
 }
 
-impl ToString for PLamExpr {
+impl ToString for LamExpr {
     fn to_string(&self) -> String {
-        match &*self.0 {
+        match self {
             LamExpr::V { idx } => format!(" {}", idx),
             LamExpr::L { lexp, .. } => format!("\\ {}", lexp.to_string()),
             LamExpr::App { func, oprd, .. } => {
@@ -640,8 +658,25 @@ impl ToString for PLamExpr {
                     };
                     format!("{}{}", func, oprd)
                 },
+            LamExpr::Nm { name } if **name == "I" => "I".to_string(),
+            LamExpr::Nm { name } if **name == "K" => "K".to_string(),
+            LamExpr::Nm { name } if **name == "S" => "S".to_string(),
+            LamExpr::Nm { name } if **name == "plus1" => "+".to_string(),
+            LamExpr::Nm { name } => format!("<{}>", **name),
             _ => "".to_string(),
         }
+    }
+}
+
+impl ToString for PLamExpr {
+
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval, s, k, i};
+    ///
+    /// assert_eq!(la(v(1)*la(v(1)*v(2))*v(1)).to_string(), "\\  1(\\  1 2) 1");
+    /// ```
+    fn to_string(&self) -> String {
+        (*self.0).to_string()
     }
 }
 
@@ -711,33 +746,47 @@ impl fmt::Debug for LamExpr {
 pub struct ChNumEval(PLamExpr);
 
 impl ChNumEval {
+
+    pub fn new(ple: &PLamExpr) -> ChNumEval {
+        ChNumEval(ple.clone())
+    }
+
+    pub fn debug(self) -> PLamExpr {
+        //(*self.0.0.clone()).clone()
+        //*self.0.0.clone()
+        //self.0.0
+        //*self.0.0
+        PLamExpr(Rc::new((*self.0.0).clone()))
+    }
+
     pub fn to_ch_num_eval(e: PLamExpr) -> ChNumEval {
         let v0 = PLamExpr(Rc::new(LamExpr::V { idx: 0 }));
         ChNumEval( e * nm("plus1") * v0 )
     }
 
     pub fn eval_cc(&self, b: bool) -> Option<Self> {
+        println!("eval_cc start: {}", (*self.0.0).clone().to_string());
         match &*self.0.0 {
-            LamExpr::App { func: f0, oprd: o0, .. } => match &*f0.0 {
+            LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" =>
-                    Some(comple(|x| x.eval_cc(false), &ChNumEval(PLamExpr::clone(o0)))),
-                LamExpr::Nm { name } if **name == "plus1" => match &*o0.0 {
+                    Some(comple(|x| x.eval_cc(false), &ChNumEval(o1.clone()))),
+                LamExpr::Nm { name } if **name == "plus1" => match &*o1.0 {
                     LamExpr::V { idx } => Some( ChNumEval(v(*idx + 1)) ),
                     _ => ap(|x| ChNumEval( nm("plus1") * x.0 ), 
-                            ChNumEval(PLamExpr::clone(o0)).eval_cc(b)),
+                                    ChNumEval(o1.clone()).eval_cc(b)),
                 }
-                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
+                LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
                     LamExpr::Nm { name } if **name == "K" =>
                         Some(comple(|x| x.eval_cc(false),
-                                    &ChNumEval(PLamExpr::clone(o1)))),
-                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
+                                    &ChNumEval(o2.clone()))),
+                    LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
                         LamExpr::Nm { name } if **name == "S" => {
-                            let x1 = ChNumEval(PLamExpr::clone(o0)).eval_cc(false);
-                            let y1 = ChNumEval(PLamExpr::clone(o1)).eval_cc(false);
-                            let z1 = ChNumEval(PLamExpr::clone(o2)).eval_cc(false);
-                            let x2 = PLamExpr::clone(&x1.clone().map_or(PLamExpr::clone(o0), |p| p.0));
-                            let y2 = PLamExpr::clone(&y1.clone().map_or(PLamExpr::clone(o1), |p| p.0));
-                            let z2 = PLamExpr::clone(&z1.clone().map_or(PLamExpr::clone(o2), |p| p.0));
+                            let x1 = ChNumEval(o1.clone()).eval_cc(false);
+                            let y1 = ChNumEval(o2.clone()).eval_cc(false);
+                            let z1 = ChNumEval(o3.clone()).eval_cc(false);
+                            let x2 = (&x1.clone().map_or(o1.clone(), |p| p.0)).clone();
+                            let y2 = (&y1.clone().map_or(o2.clone(), |p| p.0)).clone();
+                            let z2 = (&z1.clone().map_or(o3.clone(), |p| p.0)).clone();
                             if b {
                                 Some(ChNumEval( x2 * z2.clone() * (y2 * z2) ))
                             } else if x1 == None && y1 == None && z1 == None {
@@ -757,6 +806,7 @@ impl ChNumEval {
     }
 
     fn others(&self, b: bool) -> Option<Self> {
+        println!("others start");
         match &*self.0.0 {
             LamExpr::App { func: f0, oprd: o0, .. } =>
                 if b {
@@ -789,5 +839,17 @@ fn test_subst() {
     assert_eq!( v(3).subst( 2, &v(4)), Some(v(2)));
     assert_eq!( la( v(1) * v(2) ).subst(1, &v(3)), Some(la( v(1) * v(4) )) );
     assert_eq!(   ( v(1) * v(2) ).subst(1, &v(3)), Some(    v(3) * v(1) )  );
+}
+
+#[test]
+fn test_eval_cc() {
+    // assert_eq!( ChNumEval::to_ch_num_eval(i()).debug(), nm("plus1") * v(1) );
+    let a = ChNumEval::to_ch_num_eval(i());
+    let a = a.eval_cc(true).map_or(None , |x| Some(x.debug()));
+    let a = match a {
+        Some(a) => a.eval_cc(true).map_or(None , |x| Some(x.debug())),
+        None => None,
+    };
+    assert_eq!( a, Some(v(1)) ); 
 }
 
