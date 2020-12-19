@@ -496,20 +496,24 @@ impl PLamExpr {
     }
 
     /// ```
-    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval, s, k, i};
+    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval, s, k, i, PLamExpr};
     ///
-    /// //let chnum = la( la( v(2) * v(1) ) );
+    /// let chnum = k() * i();
+    /// assert_eq!( chnum.get_num(), Some(0) );
     /// let chnum = i();
-    /// let n = ChNumEval::to_ch_num_eval( chnum .clone());
-    /// //assert_eq!( n, ChNumEval::new(&i()) );
-    /// let n = n.eval_cc(true);
-    /// if let Some(n) = n {
-    ///     assert_eq!( n.debug(), v(1) );
-    /// } else {
-    ///     assert_eq!( None, Some(LamExpr::V{ idx: 1 }) );
-    /// }
+    /// assert_eq!( chnum.get_num(), Some(1) );
     ///
-    /// assert_eq!( la( la( v(2) * v(1) ) ).get_num(), Some(1) );
+    /// let chnum = PLamExpr::abst_elim(&la(la( v(1) )));
+    /// let chnum = chnum.map_or(i(), |x| x);
+    /// assert_eq!( chnum.get_num(), Some(0) );
+    ///
+    /// let chnum = PLamExpr::abst_elim(&la(la( (  v(2) * v(1)   ) ) ));
+    /// let chnum = chnum.map_or(i(), |x| x);
+    /// assert_eq!( chnum.get_num(), Some(1) );
+    ///
+    /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
+    /// let chnum = chnum.map_or(i(), |x| x);
+    /// assert_eq!( chnum.get_num(), Some(2) );
     /// ```
     pub fn get_num(&self) -> Option<u32> {
         let cn = step_n(5_000, ChNumEval::to_ch_num_eval(self.clone()),
@@ -843,7 +847,6 @@ fn test_subst() {
 
 #[test]
 fn test_eval_cc() {
-    // assert_eq!( ChNumEval::to_ch_num_eval(i()).debug(), nm("plus1") * v(1) );
     let o = ChNumEval::to_ch_num_eval(i());
     let a = o.clone().eval_cc(true);
     let o = a.clone().map_or(o, |x| x);
