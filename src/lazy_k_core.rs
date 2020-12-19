@@ -844,12 +844,11 @@ fn test_subst() {
 #[test]
 fn test_eval_cc() {
     // assert_eq!( ChNumEval::to_ch_num_eval(i()).debug(), nm("plus1") * v(1) );
-    let a = ChNumEval::to_ch_num_eval(i());
-    let a = a.eval_cc(true).map_or(None , |x| Some(x.debug()));
-    let a = match a {
-        Some(a) => a.eval_cc(true).map_or(None , |x| Some(x.debug())),
-        None => None,
-    };
-    assert_eq!( a, Some(v(1)) ); 
+    let o = ChNumEval::to_ch_num_eval(i());
+    let a = o.clone().eval_cc(true);
+    let o = a.clone().map_or(o, |x| x);
+    let a = o.clone().eval_cc(true);
+    let o = a.clone().map_or(o, |x| x);
+    assert_eq!( o.0, v(1) ); 
 }
 
