@@ -756,10 +756,6 @@ impl ChNumEval {
     }
 
     pub fn debug(self) -> PLamExpr {
-        //(*self.0.0.clone()).clone()
-        //*self.0.0.clone()
-        //self.0.0
-        //*self.0.0
         PLamExpr(Rc::new((*self.0.0).clone()))
     }
 
@@ -769,7 +765,7 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self, b: bool) -> Option<Self> {
-        println!("eval_cc start: {}", (*self.0.0).clone().to_string());
+        //println!("eval_cc start: {}", (*self.0.0).clone().to_string());
         match &*self.0.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" =>
@@ -785,12 +781,12 @@ impl ChNumEval {
                                     &ChNumEval(o2.clone()))),
                     LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
                         LamExpr::Nm { name } if **name == "S" => {
-                            let x1 = ChNumEval(o1.clone()).eval_cc(false);
+                            let x1 = ChNumEval(o3.clone()).eval_cc(false);
                             let y1 = ChNumEval(o2.clone()).eval_cc(false);
-                            let z1 = ChNumEval(o3.clone()).eval_cc(false);
-                            let x2 = (&x1.clone().map_or(o1.clone(), |p| p.0)).clone();
+                            let z1 = ChNumEval(o1.clone()).eval_cc(false);
+                            let x2 = (&x1.clone().map_or(o3.clone(), |p| p.0)).clone();
                             let y2 = (&y1.clone().map_or(o2.clone(), |p| p.0)).clone();
-                            let z2 = (&z1.clone().map_or(o3.clone(), |p| p.0)).clone();
+                            let z2 = (&z1.clone().map_or(o1.clone(), |p| p.0)).clone();
                             if b {
                                 Some(ChNumEval( x2 * z2.clone() * (y2 * z2) ))
                             } else if x1 == None && y1 == None && z1 == None {
@@ -810,7 +806,6 @@ impl ChNumEval {
     }
 
     fn others(&self, b: bool) -> Option<Self> {
-        println!("others start");
         match &*self.0.0 {
             LamExpr::App { func: f0, oprd: o0, .. } =>
                 if b {
