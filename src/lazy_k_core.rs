@@ -143,7 +143,7 @@ pub fn jot(j: &str) -> PLamExpr {
 
 impl PLamExpr {
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         match *self.0 {
             LamExpr::L { size, .. } => size,
             LamExpr::App { size, .. } => size,
