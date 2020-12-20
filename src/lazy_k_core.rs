@@ -783,8 +783,16 @@ pub struct ChNumEval(PLamExpr);
 
 impl ChNumEval {
 
+    pub fn new(a: PLamExpr) -> ChNumEval {
+        ChNumEval(a)
+    }
+
     pub fn get_lam(self) -> PLamExpr {
         PLamExpr(Rc::new((*self.0.0).clone()))
+    }
+
+    pub fn get_lam2(self) -> LamExpr {
+        (*PLamExpr(Rc::new((*self.0.0).clone())).0).clone()
     }
 
     pub fn to_ch_num_eval(e: PLamExpr) -> ChNumEval {
