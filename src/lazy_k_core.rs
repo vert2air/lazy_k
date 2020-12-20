@@ -71,10 +71,7 @@ pub fn v(i: u32) -> PLamExpr {
 }
 
 pub fn la(e: PLamExpr) -> PLamExpr {
-    PLamExpr(Rc::new(LamExpr::L {
-                    size: 1 + e.len(),
-                    lexp: PLamExpr::clone(&e),
-                }))
+    PLamExpr(Rc::new(LamExpr::L { size: 1 + e.len(), lexp: (&e).clone(), }))
 }
 
 pub fn jot(j: &str) -> PLamExpr {
@@ -98,15 +95,13 @@ impl PLamExpr {
     }
 
     /// ```
-    /// use crate::lazy_k::lazy_k_core::{LamExprStyle, i, k, s, iota, v, la, jot};
+    /// use crate::lazy_k::lazy_k_core::{i, k, s, iota, v, la, jot};
+    /// use crate::lazy_k::lazy_k_core::LamExprStyle::{Lambda, CC, Iota, Jot};
     ///
-    /// assert_eq!( ( s() * k() * k() * s() ).check_style(),
-    ///                                         Some(LamExprStyle::CC));
-    /// assert_eq!( jot("11100").check_style(), Some(LamExprStyle::Jot));
-    /// assert_eq!( la( v(1) * la( v(1) * v(2) ) ).check_style(),
-    ///                                         Some(LamExprStyle::Lambda));
-    /// assert_eq!( ( iota() * (iota() * iota()) ).check_style(),
-    ///                                         Some(LamExprStyle::Iota));
+    /// assert_eq!( ( s() * k() * k() * s() ).check_style(),      Some(CC));
+    /// assert_eq!( jot("11100").check_style(),                   Some(Jot));
+    /// assert_eq!( la( v(1) * la( v(1) * v(2) ) ).check_style(), Some(Lambda));
+    /// assert_eq!( ( iota() * (iota() * iota()) ).check_style(), Some(Iota));
     ///
     /// assert_eq!( ( k() * la( v(1) * s() ) ).check_style(),    None);
     /// assert_eq!( (jot("11100") * jot("11100")).check_style(), None);
@@ -324,7 +319,7 @@ impl PLamExpr {
 
     fn subst(&self, thr: u32, e: &PLamExpr) -> Option<PLamExpr> {
         match &*self.0 {
-            LamExpr::V { idx } if *idx == thr => Some(Self::clone(e)),
+            LamExpr::V { idx } if *idx == thr => Some(e.clone()),
             LamExpr::V { idx } if *idx >  thr => Some(v(idx - 1)),
             LamExpr::V {..}                   => None,
             LamExpr::L { lexp, .. }           =>
@@ -361,17 +356,16 @@ impl PLamExpr {
         match &*org.0 {
             LamExpr::App { func: f1, oprd: o1, .. } =>
                 match &*f1.0 {
-                    LamExpr::Nm { name } if **name == "I" =>
-                        Some(Self::clone(o1)),
+                    LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
                     LamExpr::App { func: f2, oprd: o2, .. } =>
                         match &*f2.0 {
                             LamExpr::Nm { name } if **name == "K" =>
-                                Some(Self::clone(o2)),
+                                Some(o2.clone()),
                             LamExpr::App { func: f3, oprd: o3, .. } =>
                                 match &*f3.0 {
                                     LamExpr::Nm { name } if **name == "S" =>
-                                        Some((Self::clone(o3) * Self::clone(o1))
-                                           * (Self::clone(o2) * Self::clone(o1))
+                                        Some((o3.clone() * o1.clone())
+                                           * (o2.clone() * o1.clone())
                                         ),
                                     _ => Self::lor(|x| Self::beta_red_cc(x),
                                                                         f1, o1),
@@ -389,8 +383,8 @@ impl PLamExpr {
     fn lor<F>(red: F, func: &Self, oprd: &Self) -> Option<Self>
             where F: Fn(&Self) -> Option<Self> {
         match red(func) {
-            Some(f_r) => Some(f_r * Self::clone(oprd)),
-            None => ap(|x| { Self::clone(func) * Self::clone(&x) }, red(oprd)),
+            Some(f_r) => Some(f_r * oprd.clone()),
+            None => ap(|x| { func.clone() * (&x).clone() }, red(oprd)),
         }
     }
 
@@ -415,7 +409,7 @@ impl PLamExpr {
             LamExpr::V   {..} => None,   // Rule 1
             LamExpr::Jot {..} => None,   // Rule 1
             LamExpr::App { func, oprd, ..} =>
-                Self::merge_app(|x: &Self| Self::abst_elim(x), func, oprd), // Rule 2
+                Self::merge_app(|x| Self::abst_elim(x), func, oprd), // Rule 2
 
             // Rule 3. T[\x.E] => K T[E] if x is NOT free in E
             LamExpr::L { lexp, .. } if ! lexp.has_var(1) => {
@@ -426,8 +420,8 @@ impl PLamExpr {
             LamExpr::L { lexp, .. } => match &*lexp.0 {
 
                 // variation of Rule 3
-                LamExpr::Nm {..} => Some(k() * Self::clone(lexp)),
-                LamExpr::Jot {..} => Some(k() * Self::clone(lexp)),
+                LamExpr::Nm {..} => Some(k() * lexp.clone()),
+                LamExpr::Jot {..} => Some(k() * lexp.clone()),
 
                 // Rule 4
                 LamExpr::V { idx } if *idx == 1 => Some(i()),
@@ -496,7 +490,7 @@ impl PLamExpr {
     }
 
     /// ```
-    /// use crate::lazy_k::lazy_k_core::{LamExpr, la, v, ChNumEval, s, k, i, PLamExpr};
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, la, v, s, k, i};
     ///
     /// let chnum = k() * i();
     /// assert_eq!( chnum.get_num(), Some(0) );
@@ -504,16 +498,11 @@ impl PLamExpr {
     /// assert_eq!( chnum.get_num(), Some(1) );
     ///
     /// let chnum = PLamExpr::abst_elim(&la(la( v(1) )));
-    /// let chnum = chnum.map_or(i(), |x| x);
-    /// assert_eq!( chnum.get_num(), Some(0) );
-    ///
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num(), Some(0) );
     /// let chnum = PLamExpr::abst_elim(&la(la( (  v(2) * v(1)   ) ) ));
-    /// let chnum = chnum.map_or(i(), |x| x);
-    /// assert_eq!( chnum.get_num(), Some(1) );
-    ///
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num(), Some(1) );
     /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
-    /// let chnum = chnum.map_or(i(), |x| x);
-    /// assert_eq!( chnum.get_num(), Some(2) );
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num(), Some(2) );
     /// ```
     pub fn get_num(&self) -> Option<u32> {
         let cn = step_n(5_000, ChNumEval::to_ch_num_eval(self.clone()),
