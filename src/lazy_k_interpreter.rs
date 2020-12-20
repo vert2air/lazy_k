@@ -1,5 +1,23 @@
 use super::lazy_k_core::*;
 
+pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
+    let mut lk = prog_data;
+    let mut v = Vec::new();
+    loop {
+        if is_nil(&lk) {
+            break;
+        }
+        let car = s() * i() * (k() * k());
+        match (car * lk.clone()).get_num() {
+            Some(n) if n < 256 => v.push(n),
+            _ => break,
+        }
+        let cdr = s() * i() * (k() * (k() * i()));
+        lk = cdr * lk;
+    }
+    v
+}
+
 /// ```
 /// use crate::lazy_k::lazy_k_core::{la, v};
 /// use crate::lazy_k::lazy_k_interpreter::{is_nil};
