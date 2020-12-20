@@ -264,7 +264,8 @@ impl PLamExpr {
         match &*self.0 {
             LamExpr::Nm { name } if **name == "I" => Ok("*ii".to_string()),
             LamExpr::Nm { name } if **name == "K" => Ok("*i*i*ii".to_string()),
-            LamExpr::Nm { name } if **name == "S" => Ok("*i*i*i*ii".to_string()),
+            LamExpr::Nm { name } if **name == "S" =>
+                                                    Ok("*i*i*i*ii".to_string()),
             LamExpr::App { func, oprd, .. } => {
                 match func.to_iota() {
                     Ok(fc) =>
@@ -531,7 +532,8 @@ impl PLamExpr {
         }
     }
 
-    fn merge_app<'a, F>(f: F, x: &'a PLamExpr, y: &'a PLamExpr) -> Option<PLamExpr>
+    fn merge_app<'a, F>(f: F, x: &'a PLamExpr, y: &'a PLamExpr)
+            -> Option<PLamExpr>
                 where F: Fn(&PLamExpr) -> Option<PLamExpr> {
         let xs = Self::clone(x);
         let ys = Self::clone(y);
@@ -669,8 +671,10 @@ pub fn step_n<F, T>(cnt_max: u32, init: T, f: F) -> T
 ///         None
 ///     }
 /// }
-/// assert_eq!( apply_fully( 7, 12, dec, check), Err((11, 6, "Error: X0".to_string()) ));
-/// assert_eq!( apply_fully( 3, 15, dec, check), Err((12, 0, "Time Limit".to_string() ) ));
+/// assert_eq!( apply_fully( 7, 12, dec, check),
+///                                 Err((11, 6, "Error: X0".to_string()) ));
+/// assert_eq!( apply_fully( 3, 15, dec, check),
+///                                 Err((12, 0, "Time Limit".to_string() ) ));
 /// assert_eq!( apply_fully( 9,  8, dec, check), Ok((1, 2) ));
 /// ```
 pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
@@ -808,9 +812,12 @@ impl ChNumEval {
                             let x1 = ChNumEval(o3.clone()).eval_cc(false);
                             let y1 = ChNumEval(o2.clone()).eval_cc(false);
                             let z1 = ChNumEval(o1.clone()).eval_cc(false);
-                            let x2 = (&x1.clone().map_or(o3.clone(), |p| p.0)).clone();
-                            let y2 = (&y1.clone().map_or(o2.clone(), |p| p.0)).clone();
-                            let z2 = (&z1.clone().map_or(o1.clone(), |p| p.0)).clone();
+                            let x2 = (&x1.clone().map_or(o3.clone(), |p| p.0))
+                                                                    .clone();
+                            let y2 = (&y1.clone().map_or(o2.clone(), |p| p.0))
+                                                                    .clone();
+                            let z2 = (&z1.clone().map_or(o1.clone(), |p| p.0))
+                                                                    .clone();
                             if b {
                                 Some(ChNumEval( x2 * z2.clone() * (y2 * z2) ))
                             } else if x1 == None && y1 == None && z1 == None {
@@ -836,7 +843,8 @@ impl ChNumEval {
                     match ChNumEval(f0.clone()).eval_cc(true) {
                         Some(ChNumEval(a)) => Some(ChNumEval(a * o0.clone())),
                         _ => match ChNumEval(o0.clone()).eval_cc(true) {
-                            Some(ChNumEval(b)) => Some(ChNumEval(f0.clone() * b)),
+                            Some(ChNumEval(b)) =>
+                                                Some(ChNumEval(f0.clone() * b)),
                             _ => None,
                         },
                     }
