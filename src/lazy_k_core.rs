@@ -413,26 +413,21 @@ impl PLamExpr {
     /// ```
     pub fn beta_red_cc(org: &Self) -> Option<PLamExpr> {
         match &*org.0 {
-            LamExpr::App { func: f1, oprd: o1, .. } =>
-                match &*f1.0 {
-                    LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
-                    LamExpr::App { func: f2, oprd: o2, .. } =>
-                        match &*f2.0 {
-                            LamExpr::Nm { name } if **name == "K" =>
-                                Some(o2.clone()),
-                            LamExpr::App { func: f3, oprd: o3, .. } =>
-                                match &*f3.0 {
-                                    LamExpr::Nm { name } if **name == "S" =>
-                                        Some((o3.clone() * o1.clone())
-                                           * (o2.clone() * o1.clone())
-                                        ),
-                                    _ => Self::lor(|x| Self::beta_red_cc(x),
-                                                                        f1, o1),
-                                },
-                            _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
-                        },
+            LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
+                LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
+                LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
+                    LamExpr::Nm { name } if **name == "K" =>
+                        Some(o2.clone()),
+                    LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
+                        LamExpr::Nm { name } if **name == "S" =>
+                            Some( (o3.clone() * o1.clone())
+                                * (o2.clone() * o1.clone()) ),
+                        _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
+                    },
                     _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
                 },
+                _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
+            },
             LamExpr::Nm {..} => None,
             _ => None,
         }
