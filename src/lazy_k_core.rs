@@ -512,6 +512,27 @@ impl PLamExpr {
             _ => None,
         }
     }
+
+    pub fn get_num_n(&self, lmt: u32) -> Result<(u32, u32), String> {
+        match apply_fully(lmt, ChNumEval::to_ch_num_eval(self.clone()),
+                                |x| x.eval_cc(true), PLamExpr::get_num_n_chk) {
+            Ok((chnum, c)) => match &*chnum.0.0 {
+                LamExpr::V { idx } => Ok((*idx, c)),
+                _ => Err("".to_string()),
+            },
+            Err((v, c, msg)) =>
+                Err(format!("{} : c = {} / {} : size = {}",
+                                                msg, c, lmt, v.debug().len())),
+        }
+    }
+
+    fn get_num_n_chk(cn: &ChNumEval) -> Option<String> {
+        if cn.clone().debug().len() > 10_000_000 {
+            Some("Space Limit".to_string())
+        } else {
+            None
+        }
+    }
 }
 
 fn comple<F, T>(f: F, a: &T) -> T
