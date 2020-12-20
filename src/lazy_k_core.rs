@@ -513,6 +513,24 @@ impl PLamExpr {
         }
     }
 
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, la, v, s, k, i};
+    ///
+    /// let chnum = k() * i();
+    /// assert_eq!( chnum.get_num_n(5), Ok((0, 3)) );
+    /// let chnum = i();
+    /// assert_eq!( chnum.get_num_n(5), Ok((1, 3)) );
+    ///
+    /// let chnum = PLamExpr::abst_elim(&la(la( v(1) )));
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(5), Ok((0, 3)) );
+    /// let chnum = PLamExpr::abst_elim(&la(la( (  v(2) * v(1)   ) ) ));
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(5), Ok((1, 3)) );
+    /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(10), Ok((2, 3)) );
+    /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(5),
+    ///                 Err("Time Limit : c = 0 / 5 : size = 5".to_string()) );
+    /// ```
     pub fn get_num_n(&self, lmt: u32) -> Result<(u32, u32), String> {
         match apply_fully(lmt, ChNumEval::to_ch_num_eval(self.clone()),
                                 |x| x.eval_cc(true), PLamExpr::get_num_n_chk) {
