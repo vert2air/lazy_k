@@ -41,7 +41,63 @@ impl Clone for LamExpr {
     }
 }
 
-pub struct PLamExpr(Rc<LamExpr>);
+impl fmt::Debug for LamExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            LamExpr::V { idx } =>
+                f.debug_struct("LamExpr::V")
+                    .field("idx", &idx)
+                    .finish(),
+            LamExpr::L { size, lexp } =>
+                f.debug_struct("LamExpr::L")
+                    .field("size", &size)
+                    .field("lexp", &lexp)
+                    .finish(),
+            LamExpr::App { size, func, oprd } =>
+                f.debug_struct("LamExpr::App")
+                    .field("size", &size)
+                    .field("func", &func)
+                    .field("oprd", &oprd)
+                    .finish(),
+            LamExpr::Nm { name } =>
+                f.debug_struct("LamExpr::Nm")
+                    .field("name", &name)
+                    .finish(),
+            LamExpr::Jot { size, jot } =>
+                f.debug_struct("LamExpr::Jot")
+                    .field("size", &size)
+                    .field("jot", &jot)
+                    .finish(),
+        }
+    }
+}
+
+impl ToString for LamExpr {
+    fn to_string(&self) -> String {
+        match self {
+            LamExpr::V { idx } => format!(" {}", idx),
+            LamExpr::L { lexp, .. } => format!("\\ {}", lexp.to_string()),
+            LamExpr::App { func, oprd, .. } => {
+                    let func = match *func.0 {
+                        LamExpr::L {..} => format!("({})", func.to_string()),
+                        _ => func.to_string(),
+                    };
+                    let oprd = match *oprd.0 {
+                        LamExpr::V {..} => oprd.to_string(),
+                        LamExpr::Nm {..} => oprd.to_string(),
+                        _ => format!("({})", oprd.to_string()),
+                    };
+                    format!("{}{}", func, oprd)
+                },
+            LamExpr::Nm { name } if **name == "I" => "I".to_string(),
+            LamExpr::Nm { name } if **name == "K" => "K".to_string(),
+            LamExpr::Nm { name } if **name == "S" => "S".to_string(),
+            LamExpr::Nm { name } if **name == "plus1" => "+".to_string(),
+            LamExpr::Nm { name } => format!("<{}>", **name),
+            _ => "".to_string(),
+        }
+    }
+}
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum LamExprStyle {
@@ -50,6 +106,8 @@ pub enum LamExprStyle {
     Iota,
     Jot,
 }
+
+pub struct PLamExpr(Rc<LamExpr>);
 
 // n: "I", "K", or "S" for Combinator and Unlamda style,
 //     or "iota" for Iota Style.
@@ -540,12 +598,12 @@ impl PLamExpr {
             },
             Err((v, c, msg)) =>
                 Err(format!("{} : c = {} / {} : size = {}",
-                                                msg, c, lmt, v.debug().len())),
+                                            msg, c, lmt, v.get_lam().len())),
         }
     }
 
     fn get_num_n_chk(cn: &ChNumEval) -> Option<String> {
-        if cn.clone().debug().len() > 10_000_000 {
+        if cn.clone().get_lam().len() > 10_000_000 {
             Some("Space Limit".to_string())
         } else {
             None
@@ -673,33 +731,6 @@ impl Mul for PLamExpr {
     }
 }
 
-impl ToString for LamExpr {
-    fn to_string(&self) -> String {
-        match self {
-            LamExpr::V { idx } => format!(" {}", idx),
-            LamExpr::L { lexp, .. } => format!("\\ {}", lexp.to_string()),
-            LamExpr::App { func, oprd, .. } => {
-                    let func = match *func.0 {
-                        LamExpr::L {..} => format!("({})", func.to_string()),
-                        _ => func.to_string(),
-                    };
-                    let oprd = match *oprd.0 {
-                        LamExpr::V {..} => oprd.to_string(),
-                        LamExpr::Nm {..} => oprd.to_string(),
-                        _ => format!("({})", oprd.to_string()),
-                    };
-                    format!("{}{}", func, oprd)
-                },
-            LamExpr::Nm { name } if **name == "I" => "I".to_string(),
-            LamExpr::Nm { name } if **name == "K" => "K".to_string(),
-            LamExpr::Nm { name } if **name == "S" => "S".to_string(),
-            LamExpr::Nm { name } if **name == "plus1" => "+".to_string(),
-            LamExpr::Nm { name } => format!("<{}>", **name),
-            _ => "".to_string(),
-        }
-    }
-}
-
 impl ToString for PLamExpr {
 
     /// ```
@@ -743,47 +774,12 @@ impl fmt::Debug for PLamExpr {
     }
 }
 
-impl fmt::Debug for LamExpr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            LamExpr::V { idx } =>
-                f.debug_struct("LamExpr::V")
-                    .field("idx", &idx)
-                    .finish(),
-            LamExpr::L { size, lexp } =>
-                f.debug_struct("LamExpr::L")
-                    .field("size", &size)
-                    .field("lexp", &lexp)
-                    .finish(),
-            LamExpr::App { size, func, oprd } =>
-                f.debug_struct("LamExpr::App")
-                    .field("size", &size)
-                    .field("func", &func)
-                    .field("oprd", &oprd)
-                    .finish(),
-            LamExpr::Nm { name } =>
-                f.debug_struct("LamExpr::Nm")
-                    .field("name", &name)
-                    .finish(),
-            LamExpr::Jot { size, jot } =>
-                f.debug_struct("LamExpr::Jot")
-                    .field("size", &size)
-                    .field("jot", &jot)
-                    .finish(),
-        }
-    }
-}
-
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct ChNumEval(PLamExpr);
 
 impl ChNumEval {
 
-    pub fn new(ple: &PLamExpr) -> ChNumEval {
-        ChNumEval(ple.clone())
-    }
-
-    pub fn debug(self) -> PLamExpr {
+    pub fn get_lam(self) -> PLamExpr {
         PLamExpr(Rc::new((*self.0.0).clone()))
     }
 
