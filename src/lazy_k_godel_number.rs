@@ -1,6 +1,10 @@
-extern crate num_bigint;
+//extern crate num_bigint;
 
 //use num_bigint::{BigInt, ToBigInt};
+use std::ops::Add;
+use std::ops::AddAssign;
+use std::ops::Sub;
+use std::ops::SubAssign;
 use std::ops::Mul;
 use std::vec::Vec;
 
@@ -49,10 +53,46 @@ fn n_to_min_expr(us: [String], n: BigInt) -> Option<PLamExpr> {
     None
 }
 */
-/*
-fn sub_rem<T: Ord>(d: T, n: T, ns: Vec<T>) -> (T, T) {
+
+fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T> + Clone>(base_num: T, gn: T) -> Vec<T> {
+    let mut l = Vec::<T>::new();
+    if gn < base_num {
+        return l;
+    }
+    l.push(base_num.clone());
+    let mut g_rem = gn;
+    loop {
+        let n = mul_up_down(l.clone());
+        let mut it = n.iter();
+        if let Some(ini) = it.next() {
+            let mut sz = ini.clone();
+            let _ = it.map(|e: &T| {
+                sz += e.clone();
+                e   // dummy return value
+            });
+            if g_rem < sz {
+                return l;
+            }
+            g_rem -= sz.clone();
+            l.push(sz)
+        } else {
+            panic!("layer_gn")
+        }
+    }
 }
-*/
+
+fn sub_rem<T: Ord + Sub<Output = T> + Clone>(n0: T, ns: Vec<T>) -> (usize, T) {
+    let mut n = n0;
+    for i in 0 .. ns.len() {
+        if n < ns[i] {
+            return (i, n)
+        } else {
+            n = n - ns[i].clone()
+        }
+    }
+    panic!("sub_rem: Impossible!")
+}
+
 fn mul_up_down<T: Mul<Output = T> + Clone>(es: Vec<T>) -> Vec<T> {
     let mut res = Vec::<T>::new();
     for i in 0 .. es.len() {
