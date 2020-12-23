@@ -1,6 +1,7 @@
 //extern crate num_bigint;
 
-//use num_bigint::{BigInt, ToBigInt};
+use num_bigint::BigInt;
+use std::convert::TryFrom;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Sub;
@@ -8,7 +9,7 @@ use std::ops::SubAssign;
 use std::ops::Mul;
 use std::vec::Vec;
 
-use super::lazy_k_core::PLamExpr;
+use super::lazy_k_core::{PLamExpr, nm};
 
 
 // ```
@@ -53,6 +54,22 @@ fn n_to_min_expr(us: [String], n: BigInt) -> Option<PLamExpr> {
     None
 }
 */
+
+fn n_to_expr_aux(b: Vec<String>, lsiz: &[BigInt], n: BigInt) -> PLamExpr {
+    if lsiz.len() == 0 {
+        match usize::try_from(n) {
+            Ok(u) => return nm(&b[u]),
+            Err(_) => panic!(""),
+        }
+    }
+    let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
+    let gi = g;
+    let m = t.clone()       % lsiz[gi].clone();
+    let d = (t - m.clone()) / lsiz[gi].clone();
+    let f = n_to_expr_aux(b.clone(), &lsiz[lsiz.len() - gi ..], d);
+    let o = n_to_expr_aux(b,         &lsiz[gi + 1..], m);
+    f * o
+}
 
 fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T> + Clone>(base_num: T, gn: T) -> Vec<T> {
     let mut l = Vec::<T>::new();
