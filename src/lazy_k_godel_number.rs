@@ -21,29 +21,29 @@ use super::lazy_k_core::{PLamExpr, nm};
 // assert_eq!( Some( n_to_unlam(12) ), read_unlam("`i`ii") );
 // assert_eq!( Some( n_to_unlam(30) ), read_unlam("`s`ii") );
 // ```
-/*
-pub fn n_to_unlam(n: BitInt) -> PLamExpr {
-    n_to_expr( ["I", "K", "S"], n )
+pub fn n_to_unlam(n: BigInt) -> PLamExpr {
+    n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
+/*
 */
 
 // Transform an Integer of Godel Number to Unlambda style expression.
 // But if there is a shorter Unlambda style expression obviously,
 // This function returns Nothing.
-/*
-pub fn n_to_min_unlam(n: BitInt) -> Option<PLamExpr> {
-    n_to_min_expr( {"I", "K", "S"], n )
-}
 
-pub fn n_to_iota(n: BitInt) -> PLamExpr {
-    if n == 0 {
+/*
+pub fn n_to_min_unlam(n: BigInt) -> Option<PLamExpr> {
+    n_to_min_expr( vec!["I".to_string(), "K".to_string(), "S".to_string()], n )
+}
+*/
+pub fn n_to_iota(n: BigInt) -> PLamExpr {
+    if n == Zero::zero() {
         panic!("n_to_iota(0) is not defined.");
     }
-    n_to_min_expr( {"iota"], n );
-    None
+    n_to_expr(vec!["iota".to_string()], n)
 }
-
-pub fn n_to_min_iota(n: BitInt) -> Option<PLamExpr> {
+/*
+pub fn n_to_min_iota(n: BigInt) -> Option<PLamExpr> {
     n_to_min_expr( {"iota"], n );
     None
 }
