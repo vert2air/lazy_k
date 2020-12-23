@@ -1,6 +1,8 @@
 //extern crate num_bigint;
+extern crate num_traits;
 
 use num_bigint::BigInt;
+use num_traits::Zero;
 use std::convert::TryFrom;
 use std::ops::Add;
 use std::ops::AddAssign;
@@ -45,11 +47,17 @@ pub fn n_to_min_iota(n: BitInt) -> Option<PLamExpr> {
     n_to_min_expr( {"iota"], n );
     None
 }
-
-fn n_to_expr(us: [String], n: BigInt) -> PLamExpr {
-    i()
+*/
+fn n_to_expr(us: Vec<String>, n: BigInt) -> PLamExpr {
+    let lsiz = match BigInt::try_from(us.len()) {
+        Ok(size) => build_layer(size, n.clone()),
+        Err(_) => panic!("n_to_expr"),
+    };
+    let sum: BigInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
+    n_to_expr_aux(us, &lsiz, n - sum)
 }
 
+/*
 fn n_to_min_expr(us: [String], n: BigInt) -> Option<PLamExpr> {
     None
 }
