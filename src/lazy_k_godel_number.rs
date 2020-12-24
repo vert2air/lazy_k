@@ -14,13 +14,36 @@ use std::vec::Vec;
 use super::lazy_k_core::{PLamExpr, nm};
 
 
-// ```
-// assert_eq!( Some( n_to_unlam( 0) ), read_unlam("i")     );
-// assert_eq!( Some( n_to_unlam( 3) ), read_unlam("`ii")   );
-// assert_eq!( Some( n_to_unlam( 4) ), read_unlam("`ik")   );
-// assert_eq!( Some( n_to_unlam(12) ), read_unlam("`i`ii") );
-// assert_eq!( Some( n_to_unlam(30) ), read_unlam("`s`ii") );
-// ```
+/// ```
+/// use lazy_k::lazy_k_read::read_lazy_k;
+/// use lazy_k::lazy_k_godel_number::n_to_unlam;
+/// use num_bigint::BigInt;
+/// use std::convert::TryFrom;
+/// 
+/// fn bn(a: i32) -> BigInt {
+///     match BigInt::try_from(a) {
+///         Ok(a2) => a2,
+///         _ => panic!("bn"),
+///     }
+/// }
+/// assert_eq!( Ok( n_to_unlam(bn( 0)) ), read_lazy_k("i")     );
+/// assert_eq!( Ok( n_to_unlam(bn( 1)) ), read_lazy_k("k")     );
+/// assert_eq!( Ok( n_to_unlam(bn( 2)) ), read_lazy_k("s")     );
+/// assert_eq!( Ok( n_to_unlam(bn( 3)) ), read_lazy_k("`ii")   );
+/// assert_eq!( Ok( n_to_unlam(bn( 4)) ), read_lazy_k("`ik")   );
+/// assert_eq!( Ok( n_to_unlam(bn( 5)) ), read_lazy_k("`is")   );
+/// assert_eq!( Ok( n_to_unlam(bn( 6)) ), read_lazy_k("`ki")   );
+/// assert_eq!( Ok( n_to_unlam(bn( 7)) ), read_lazy_k("`kk")   );
+/// assert_eq!( Ok( n_to_unlam(bn( 8)) ), read_lazy_k("`ks")   );
+
+/// assert_eq!( Ok( n_to_unlam(bn( 9)) ), read_lazy_k("`si")   );
+
+// assert_eq!( Ok( n_to_unlam(bn(10)) ), read_lazy_k("`sk")   );
+
+// assert_eq!( Ok( n_to_unlam(bn(11)) ), read_lazy_k("`ss")   );
+// assert_eq!( Ok( n_to_unlam(bn(12)) ), read_lazy_k("`i`ii") );
+// assert_eq!( Ok( n_to_unlam(bn(30)) ), read_lazy_k("`s`ii") );
+/// ```
 pub fn n_to_unlam(n: BigInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
@@ -65,9 +88,9 @@ fn n_to_min_expr(us: [String], n: BigInt) -> Option<PLamExpr> {
 
 fn n_to_expr_aux(b: Vec<String>, lsiz: &[BigInt], n: BigInt) -> PLamExpr {
     if lsiz.len() == 0 {
-        match usize::try_from(n) {
+        match usize::try_from(n.clone()) {
             Ok(u) => return nm(&b[u]),
-            Err(_) => panic!(""),
+            Err(_) => panic!(format!("n_to_expr_aux({})", n)),
         }
     }
     let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
@@ -99,7 +122,8 @@ fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssig
                 return l;
             }
             g_rem -= sz.clone();
-            l.push(sz)
+            // l.push(sz)
+            l.insert(0, sz)
         } else {
             panic!("layer_gn")
         }
@@ -126,3 +150,30 @@ fn mul_up_down<T: Mul<Output = T> + Clone>(es: Vec<T>) -> Vec<T> {
     res
 }
 
+#[test]
+fn test_build_layer() {
+    assert_eq!( build_layer(3, 2), vec![] );
+    assert_eq!( build_layer(3, 5), vec![3, ] );
+    assert_eq!( build_layer(3, 15), vec![3*3, 3, ] );
+    assert_eq!( build_layer(3, 70), vec![27*2, 9, 3, ] );
+    //assert_eq!( build_layer(3, 500), vec![3, 9, 54, 3*54*2 + 81] );
+
+}
+
+#[test]
+fn test_sub_rem() {
+    //assert_eq!( sum_rem(1, vec![100, 10]), (0, 1) );
+    //assert_eq!( sum_rem(20, vec![100, 10]), (0, 1) );
+}
+
+#[test]
+fn test_mul_up_down() {
+    assert_eq!( mul_up_down(vec![1, 2, 3]), vec![3, 4, 3] );
+    assert_eq!( mul_up_down(vec![1, 2, 3, 4]), vec![4, 6, 6, 4] );
+    assert_eq!( mul_up_down(vec![1, 2, 3, 4, 5]), vec![5, 8, 9, 8, 5] );
+
+    assert_eq!( mul_up_down(vec![3]), vec![9] );
+    assert_eq!( mul_up_down(vec![3, 9]), vec![27, 27] );
+    assert_eq!( mul_up_down(vec![3, 9, 54]), vec![162, 81, 162] );
+    assert_eq!( mul_up_down(vec![3, 9, 54, 305]), vec![915, 486, 486, 915] );
+}
