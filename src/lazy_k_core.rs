@@ -143,6 +143,10 @@ pub fn jot(j: &str) -> PLamExpr {
 
 impl PLamExpr {
 
+    pub fn extract(&self) -> &LamExpr {
+        &*self.0
+    }
+
     pub fn len(&self) -> usize {
         match *self.0 {
             LamExpr::L { size, .. } => size,

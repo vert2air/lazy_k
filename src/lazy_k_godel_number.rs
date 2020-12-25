@@ -14,7 +14,7 @@ use num_traits::Zero;
 type OwnInt = BigInt;
 //type OwnInt = i64;
 
-use super::lazy_k_core::{PLamExpr, nm};
+use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 
 
 /// ```
@@ -50,18 +50,34 @@ use super::lazy_k_core::{PLamExpr, nm};
 pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
-/*
-*/
 
 // Transform an Integer of Godel Number to Unlambda style expression.
 // But if there is a shorter Unlambda style expression obviously,
 // This function returns Nothing.
 
-/*
+/// ```
+/// use lazy_k::lazy_k_read::read_lazy_k;
+/// use lazy_k::lazy_k_godel_number::n_to_min_unlam;
+/// use std::convert::TryFrom;
+/// use num_bigint::BigInt;
+/// 
+/// type OwnInt = BigInt;
+/// //type OwnInt = i64;
+/// 
+/// fn bn(a: i32) -> OwnInt {
+///     match OwnInt::try_from(a) {
+///         Ok(a2) => a2,
+///         _ => panic!("bn"),
+///     }
+/// }
+/// assert_eq!( n_to_min_unlam(bn( 3)), None );   // `ii
+/// assert_eq!( n_to_min_unlam(bn( 4)), None );   // `ik
+/// assert_eq!( n_to_min_unlam(bn( 5)), None );   // `is
+/// ```
 pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
-    n_to_min_expr( vec!["I".to_string(), "K".to_string(), "S".to_string()], n )
+    n_to_min_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
-*/
+
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_godel_number::n_to_iota;
@@ -94,20 +110,14 @@ pub fn n_to_min_iota(n: OwnInt) -> Option<PLamExpr> {
     None
 }
 */
-fn n_to_expr(us: Vec<String>, n: OwnInt) -> PLamExpr {
-    let lsiz = match OwnInt::try_from(us.len()) {
+fn n_to_expr(b: Vec<String>, n: OwnInt) -> PLamExpr {
+    let lsiz = match OwnInt::try_from(b.len()) {
         Ok(size) => build_layer(size, n.clone()),
         Err(_) => panic!("n_to_expr"),
     };
     let sum: OwnInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
-    n_to_expr_aux(us, &lsiz[..], n - sum)
+    n_to_expr_aux(b, &lsiz[..], n - sum)
 }
-
-/*
-fn n_to_min_expr(us: [String], n: OwnInt) -> Option<PLamExpr> {
-    None
-}
-*/
 
 fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
     if lsiz.len() == 0 {
@@ -123,6 +133,53 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
     let o = n_to_expr_aux(b,         &lsiz[g + 1          ..], m);
     f * o
 }
+
+fn n_to_min_expr(b: Vec<String>, n: OwnInt) -> Option<PLamExpr> {
+    let lsiz = match OwnInt::try_from(b.len()) {
+        Ok(size) => build_layer(size, n.clone()),
+        Err(_) => panic!("n_to_expr"),
+    };
+    let sum: OwnInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
+    n_to_min_expr_aux(b, &lsiz[..], n - sum)
+}
+
+fn n_to_min_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt)
+                                                        -> Option<PLamExpr> {
+    if lsiz.len() == 0 {
+        match usize::try_from(n.clone()) {
+            Ok(u) => return Some(nm(&b[u])),
+            Err(_) => panic!(format!("n_to_expr_aux({})", n)),
+        }
+    }
+    let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
+    let m = t.clone()       % lsiz[g].clone();
+    let d = (t - m.clone()) / lsiz[g].clone();
+    let f1 = match n_to_min_expr_aux(b.clone(), &lsiz[lsiz.len() - g ..], d) {
+        Some(x) => x,
+        None => return None,
+    };
+    let o1 = match n_to_min_expr_aux(b,         &lsiz[g + 1          ..], m) {
+        Some(x) => x,
+        None => return None,
+    };
+    match f1.extract() {
+        LamExpr::Nm { name } if **name == "I" => None,
+        LamExpr::App { func: f2, oprd: o2, ..  } => match f2.extract() {
+            LamExpr::Nm { name } if **name == "K" => None,
+            LamExpr::Nm { name } if **name == "S" => match o2.extract() {
+                LamExpr::Nm { name } if **name == "K" => None,
+                _ => Some(f1 * o1)
+            }
+            _ => Some(f1 * o1)
+        }
+        _ => Some(f1 * o1)
+    }
+}
+/*
+fn n_to_min_expr(us: [String], n: OwnInt) -> Option<PLamExpr> {
+    None
+}
+*/
 
 fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T> + Clone>(base_num: T, gn: T) -> Vec<T> {
     let mut l = Vec::<T>::new();
