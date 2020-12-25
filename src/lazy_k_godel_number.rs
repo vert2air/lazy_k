@@ -1,8 +1,6 @@
 //extern crate num_bigint;
 extern crate num_traits;
 
-use num_bigint::BigInt;
-use num_traits::Zero;
 use std::convert::TryFrom;
 use std::ops::Add;
 use std::ops::AddAssign;
@@ -10,6 +8,11 @@ use std::ops::Sub;
 use std::ops::SubAssign;
 use std::ops::Mul;
 use std::vec::Vec;
+use num_bigint::BigInt;
+use num_traits::Zero;
+
+type OwnInt = BigInt;
+//type OwnInt = i64;
 
 use super::lazy_k_core::{PLamExpr, nm};
 
@@ -17,11 +20,14 @@ use super::lazy_k_core::{PLamExpr, nm};
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_godel_number::n_to_unlam;
-/// use num_bigint::BigInt;
 /// use std::convert::TryFrom;
+/// use num_bigint::BigInt;
 /// 
-/// fn bn(a: i32) -> BigInt {
-///     match BigInt::try_from(a) {
+/// type OwnInt = BigInt;
+/// //type OwnInt = i64;
+/// 
+/// fn bn(a: i32) -> OwnInt {
+///     match OwnInt::try_from(a) {
 ///         Ok(a2) => a2,
 ///         _ => panic!("bn"),
 ///     }
@@ -41,7 +47,7 @@ use super::lazy_k_core::{PLamExpr, nm};
 /// assert_eq!( Ok( n_to_unlam(bn(12)) ), read_lazy_k("`i`ii") );
 /// assert_eq!( Ok( n_to_unlam(bn(30)) ), read_lazy_k("`s`ii") );
 /// ```
-pub fn n_to_unlam(n: BigInt) -> PLamExpr {
+pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
 /*
@@ -52,38 +58,38 @@ pub fn n_to_unlam(n: BigInt) -> PLamExpr {
 // This function returns Nothing.
 
 /*
-pub fn n_to_min_unlam(n: BigInt) -> Option<PLamExpr> {
+pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
     n_to_min_expr( vec!["I".to_string(), "K".to_string(), "S".to_string()], n )
 }
 */
-pub fn n_to_iota(n: BigInt) -> PLamExpr {
+pub fn n_to_iota(n: OwnInt) -> PLamExpr {
     if n == Zero::zero() {
         panic!("n_to_iota(0) is not defined.");
     }
     n_to_expr(vec!["iota".to_string()], n)
 }
 /*
-pub fn n_to_min_iota(n: BigInt) -> Option<PLamExpr> {
+pub fn n_to_min_iota(n: OwnInt) -> Option<PLamExpr> {
     n_to_min_expr( {"iota"], n );
     None
 }
 */
-fn n_to_expr(us: Vec<String>, n: BigInt) -> PLamExpr {
-    let lsiz = match BigInt::try_from(us.len()) {
+fn n_to_expr(us: Vec<String>, n: OwnInt) -> PLamExpr {
+    let lsiz = match OwnInt::try_from(us.len()) {
         Ok(size) => build_layer(size, n.clone()),
         Err(_) => panic!("n_to_expr"),
     };
-    let sum: BigInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
+    let sum: OwnInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
     n_to_expr_aux(us, &lsiz[..], n - sum)
 }
 
 /*
-fn n_to_min_expr(us: [String], n: BigInt) -> Option<PLamExpr> {
+fn n_to_min_expr(us: [String], n: OwnInt) -> Option<PLamExpr> {
     None
 }
 */
 
-fn n_to_expr_aux(b: Vec<String>, lsiz: &[BigInt], n: BigInt) -> PLamExpr {
+fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
     if lsiz.len() == 0 {
         match usize::try_from(n.clone()) {
             Ok(u) => return nm(&b[u]),
