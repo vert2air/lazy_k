@@ -77,7 +77,7 @@ fn n_to_expr(us: Vec<String>, n: BigInt) -> PLamExpr {
         Err(_) => panic!("n_to_expr"),
     };
     let sum: BigInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
-    n_to_expr_aux(us, &lsiz, n - sum)
+    n_to_expr_aux(us, &lsiz[..], n - sum)
 }
 
 /*
@@ -98,7 +98,7 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[BigInt], n: BigInt) -> PLamExpr {
     let m = t.clone()       % lsiz[gi].clone();
     let d = (t - m.clone()) / lsiz[gi].clone();
     let f = n_to_expr_aux(b.clone(), &lsiz[lsiz.len() - gi ..], d);
-    let o = n_to_expr_aux(b,         &lsiz[gi + 1..], m);
+    let o = n_to_expr_aux(b,         &lsiz[gi + 1          ..], m);
     f * o
 }
 
@@ -114,15 +114,13 @@ fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssig
         let mut it = n.iter();
         if let Some(ini) = it.next() {
             let mut sz = ini.clone();
-            let _ = it.map(|e: &T| {
+            for e in it {
                 sz += e.clone();
-                e   // dummy return value
-            });
+            }
             if g_rem < sz {
                 return l;
             }
             g_rem -= sz.clone();
-            // l.push(sz)
             l.insert(0, sz)
         } else {
             panic!("layer_gn")
@@ -130,13 +128,13 @@ fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssig
     }
 }
 
-fn sub_rem<T: Ord + Sub<Output = T> + Clone>(n0: T, ns: Vec<T>) -> (usize, T) {
+fn sub_rem<T: Ord + SubAssign + Clone>(n0: T, ns: Vec<T>) -> (usize, T) {
     let mut n = n0;
     for i in 0 .. ns.len() {
         if n < ns[i] {
             return (i, n)
         } else {
-            n = n - ns[i].clone()
+            n -= ns[i].clone()
         }
     }
     panic!("sub_rem: Impossible!")
@@ -152,18 +150,24 @@ fn mul_up_down<T: Mul<Output = T> + Clone>(es: Vec<T>) -> Vec<T> {
 
 #[test]
 fn test_build_layer() {
-    assert_eq!( build_layer(3, 2), vec![] );
-    assert_eq!( build_layer(3, 5), vec![3, ] );
-    assert_eq!( build_layer(3, 15), vec![3*3, 3, ] );
-    assert_eq!( build_layer(3, 70), vec![27*2, 9, 3, ] );
-    //assert_eq!( build_layer(3, 500), vec![3, 9, 54, 3*54*2 + 81] );
+    assert_eq!( build_layer(3,   2), vec![] );
+    assert_eq!( build_layer(3,   5), vec![                     3] );
+    assert_eq!( build_layer(3,  15), vec![                3*3, 3] );
+    assert_eq!( build_layer(3,  70), vec![            27*2, 9, 3] );
+    assert_eq!( build_layer(3, 500), vec![3*54*2 + 9*9, 54, 9, 3] );
 
 }
 
 #[test]
 fn test_sub_rem() {
-    //assert_eq!( sum_rem(1, vec![100, 10]), (0, 1) );
-    //assert_eq!( sum_rem(20, vec![100, 10]), (0, 1) );
+    assert_eq!( sub_rem(0, vec![3]), (0, 0) );
+    assert_eq!( sub_rem(1, vec![3]), (0, 1) );
+    assert_eq!( sub_rem(2, vec![3]), (0, 2) );
+    assert_eq!( sub_rem(4, vec![9, 3]), (0, 4) );
+    assert_eq!( sub_rem(8, vec![9, 3]), (0, 8) );
+    assert_eq!( sub_rem(9, vec![9, 3]), (1, 0) );
+    assert_eq!( sub_rem(10, vec![9, 3]), (1, 1) );
+    assert_eq!( sub_rem(11, vec![9, 3]), (1, 2) );
 }
 
 #[test]
@@ -172,8 +176,8 @@ fn test_mul_up_down() {
     assert_eq!( mul_up_down(vec![1, 2, 3, 4]), vec![4, 6, 6, 4] );
     assert_eq!( mul_up_down(vec![1, 2, 3, 4, 5]), vec![5, 8, 9, 8, 5] );
 
-    assert_eq!( mul_up_down(vec![3]), vec![9] );
-    assert_eq!( mul_up_down(vec![3, 9]), vec![27, 27] );
-    assert_eq!( mul_up_down(vec![3, 9, 54]), vec![162, 81, 162] );
-    assert_eq!( mul_up_down(vec![3, 9, 54, 305]), vec![915, 486, 486, 915] );
+    assert_eq!( mul_up_down(vec![            3]), vec![9] );
+    assert_eq!( mul_up_down(vec![         9, 3]), vec![27, 27] );
+    assert_eq!( mul_up_down(vec![     54, 9, 3]), vec![162, 81, 162] );
+    assert_eq!( mul_up_down(vec![405, 54, 9, 3]), vec![1215, 486, 486, 1215] );
 }
