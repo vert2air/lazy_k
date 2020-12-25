@@ -94,11 +94,10 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[BigInt], n: BigInt) -> PLamExpr {
         }
     }
     let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
-    let gi = g;
-    let m = t.clone()       % lsiz[gi].clone();
-    let d = (t - m.clone()) / lsiz[gi].clone();
-    let f = n_to_expr_aux(b.clone(), &lsiz[lsiz.len() - gi ..], d);
-    let o = n_to_expr_aux(b,         &lsiz[gi + 1          ..], m);
+    let m = t.clone()       % lsiz[g].clone();
+    let d = (t - m.clone()) / lsiz[g].clone();
+    let f = n_to_expr_aux(b.clone(), &lsiz[lsiz.len() - g ..], d);
+    let o = n_to_expr_aux(b,         &lsiz[g + 1          ..], m);
     f * o
 }
 
