@@ -35,14 +35,11 @@ use super::lazy_k_core::{PLamExpr, nm};
 /// assert_eq!( Ok( n_to_unlam(bn( 6)) ), read_lazy_k("`ki")   );
 /// assert_eq!( Ok( n_to_unlam(bn( 7)) ), read_lazy_k("`kk")   );
 /// assert_eq!( Ok( n_to_unlam(bn( 8)) ), read_lazy_k("`ks")   );
-
 /// assert_eq!( Ok( n_to_unlam(bn( 9)) ), read_lazy_k("`si")   );
-
-// assert_eq!( Ok( n_to_unlam(bn(10)) ), read_lazy_k("`sk")   );
-
-// assert_eq!( Ok( n_to_unlam(bn(11)) ), read_lazy_k("`ss")   );
-// assert_eq!( Ok( n_to_unlam(bn(12)) ), read_lazy_k("`i`ii") );
-// assert_eq!( Ok( n_to_unlam(bn(30)) ), read_lazy_k("`s`ii") );
+/// assert_eq!( Ok( n_to_unlam(bn(10)) ), read_lazy_k("`sk")   );
+/// assert_eq!( Ok( n_to_unlam(bn(11)) ), read_lazy_k("`ss")   );
+/// assert_eq!( Ok( n_to_unlam(bn(12)) ), read_lazy_k("`i`ii") );
+/// assert_eq!( Ok( n_to_unlam(bn(30)) ), read_lazy_k("`s`ii") );
 /// ```
 pub fn n_to_unlam(n: BigInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
@@ -107,7 +104,7 @@ fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssig
         return l;
     }
     l.push(base_num.clone());
-    let mut g_rem = gn;
+    let mut g_rem = gn -  base_num;
     loop {
         let n = mul_up_down(l.clone());
         let mut it = n.iter();
