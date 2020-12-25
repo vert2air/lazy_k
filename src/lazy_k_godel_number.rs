@@ -62,6 +62,26 @@ pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
     n_to_min_expr( vec!["I".to_string(), "K".to_string(), "S".to_string()], n )
 }
 */
+/// ```
+/// use lazy_k::lazy_k_read::read_lazy_k;
+/// use lazy_k::lazy_k_godel_number::n_to_iota;
+/// use std::convert::TryFrom;
+/// use num_bigint::BigInt;
+/// 
+/// type OwnInt = BigInt;
+/// //type OwnInt = i64;
+/// 
+/// fn bn(a: i32) -> OwnInt {
+///     match OwnInt::try_from(a) {
+///         Ok(a2) => a2,
+///         _ => panic!("bn"),
+///     }
+/// }
+/// assert_eq!( Ok( n_to_iota(bn( 1)) ), read_lazy_k("*ii") );
+/// assert_eq!( Ok( n_to_iota(bn( 2)) ), read_lazy_k("*i*ii") );
+/// assert_eq!( Ok( n_to_iota(bn( 4)) ), read_lazy_k("*i*i*ii") );
+/// assert_eq!( Ok( n_to_iota(bn( 9)) ), read_lazy_k("*i*i*i*ii") );
+/// ```
 pub fn n_to_iota(n: OwnInt) -> PLamExpr {
     if n == Zero::zero() {
         panic!("n_to_iota(0) is not defined.");
