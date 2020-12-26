@@ -2,7 +2,6 @@
 extern crate num_traits;
 
 use std::convert::TryFrom;
-use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Sub;
 use std::ops::SubAssign;
@@ -178,7 +177,7 @@ fn n_to_min_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt)
     }
 }
 
-fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T> + Clone>(base_num: T, gn: T) -> Vec<T> {
+fn build_layer<T: Ord + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T> + Clone>(base_num: T, gn: T) -> Vec<T> {
     let mut l = Vec::<T>::new();
     if gn < base_num {
         return l;
