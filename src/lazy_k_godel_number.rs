@@ -128,7 +128,7 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
             Err(_) => panic!(format!("n_to_expr_aux({})", n)),
         }
     }
-    let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
+    let (g, t) = sub_rem(n, mul_up_down(&lsiz.to_vec()));
     let m = t.clone()       % lsiz[g].clone();
     let d = (t - m.clone()) / lsiz[g].clone();
     let f = n_to_expr_aux(b.clone(), &lsiz[lsiz.len() - g ..], d);
@@ -153,7 +153,7 @@ fn n_to_min_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt)
             Err(_) => panic!(format!("n_to_expr_aux({})", n)),
         }
     }
-    let (g, t) = sub_rem(n, mul_up_down(lsiz.to_vec()));
+    let (g, t) = sub_rem(n, mul_up_down(&lsiz.to_vec()));
     let m = t.clone()       % lsiz[g].clone();
     let d = (t - m.clone()) / lsiz[g].clone();
     let f1 = match n_to_min_expr_aux(b.clone(), &lsiz[lsiz.len() - g ..], d) {
@@ -186,7 +186,7 @@ fn build_layer<T: Ord + Add<Output = T> + AddAssign + Sub<Output = T> + SubAssig
     l.push(base_num.clone());
     let mut g_rem = gn -  base_num;
     loop {
-        let n = mul_up_down(l.clone());
+        let n = mul_up_down(&l);
         let mut it = n.iter();
         if let Some(ini) = it.next() {
             let mut sz = ini.clone();
@@ -216,7 +216,7 @@ fn sub_rem<T: Ord + SubAssign + Clone>(n0: T, ns: Vec<T>) -> (usize, T) {
     panic!("sub_rem: Impossible!")
 }
 
-fn mul_up_down<T: Mul<Output = T> + Clone>(es: Vec<T>) -> Vec<T> {
+fn mul_up_down<T: Mul<Output = T> + Clone>(es: &Vec<T>) -> Vec<T> {
     let mut res = Vec::<T>::new();
     for i in 0 .. es.len() {
         res.push(es[i].clone() * es[es.len() - i - 1].clone());
@@ -292,12 +292,12 @@ pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt) {
             let (_t, no) = lam_to_n(oprd);
             let mut lsiz = vec![tf.clone()];
             for _ in 1 .. (size + 1) / 2 - 1 {
-                let n = mul_up_down(lsiz.clone());
+                let n = mul_up_down(&lsiz);
                 lsiz.push(sum(n));
             }
             let (_, nf2) = sub_rem(nf, lsiz.clone());
             let (_, no2) = sub_rem(no, lsiz.clone());
-            let ud = mul_up_down(lsiz.clone());
+            let ud = mul_up_down(&lsiz);
             let mut a = zero;
             for i in 0 .. (func.len() - 1) / 2 {
                 a += ud[i].clone();
@@ -332,12 +332,12 @@ fn test_sub_rem() {
 
 #[test]
 fn test_mul_up_down() {
-    assert_eq!( mul_up_down(vec![1, 2, 3]), vec![3, 4, 3] );
-    assert_eq!( mul_up_down(vec![1, 2, 3, 4]), vec![4, 6, 6, 4] );
-    assert_eq!( mul_up_down(vec![1, 2, 3, 4, 5]), vec![5, 8, 9, 8, 5] );
+    assert_eq!( mul_up_down(&vec![1, 2, 3]), vec![3, 4, 3] );
+    assert_eq!( mul_up_down(&vec![1, 2, 3, 4]), vec![4, 6, 6, 4] );
+    assert_eq!( mul_up_down(&vec![1, 2, 3, 4, 5]), vec![5, 8, 9, 8, 5] );
 
-    assert_eq!( mul_up_down(vec![            3]), vec![9] );
-    assert_eq!( mul_up_down(vec![         9, 3]), vec![27, 27] );
-    assert_eq!( mul_up_down(vec![     54, 9, 3]), vec![162, 81, 162] );
-    assert_eq!( mul_up_down(vec![405, 54, 9, 3]), vec![1215, 486, 486, 1215] );
+    assert_eq!( mul_up_down(&vec![            3]), vec![9] );
+    assert_eq!( mul_up_down(&vec![         9, 3]), vec![27, 27] );
+    assert_eq!( mul_up_down(&vec![     54, 9, 3]), vec![162, 81, 162] );
+    assert_eq!( mul_up_down(&vec![405, 54, 9, 3]), vec![1215, 486, 486, 1215] );
 }
