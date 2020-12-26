@@ -249,7 +249,6 @@ fn sum(v: Vec<OwnInt>) -> OwnInt {
 ///         _ => panic!("lam_to_n(0)"),
 ///     }
 /// };
-/// assert_eq!( lam_to_n(&i()), (n(3), n(1), n(0)) );
 /// assert_eq!(lam_to_n(&read_lazy_k("i").unwrap()), (n(3), n(1), n(0)));
 /// assert_eq!(lam_to_n(&read_lazy_k("k").unwrap()), (n(3), n(1), n(1)));
 /// assert_eq!(lam_to_n(&read_lazy_k("s").unwrap()), (n(3), n(1), n(2)));
@@ -268,6 +267,15 @@ fn sum(v: Vec<OwnInt>) -> OwnInt {
 /// assert_eq!(lam_to_n(&read_lazy_k("`i`ki").unwrap()), (n(3), n(3), n(15)));
 /// assert_eq!(lam_to_n(&read_lazy_k("``kss").unwrap()), (n(3), n(3), n(56)));
 /// assert_eq!(lam_to_n(&read_lazy_k("``ski").unwrap()), (n(3), n(3), n(60)));
+/// 
+/// assert_eq!(lam_to_n(&read_lazy_k("*ii").unwrap()), (n(1), n(2), n(1)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i*ii").unwrap()), (n(1), n(3), n(2)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**iii").unwrap()), (n(1), n(3), n(3)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i*i*ii").unwrap()), (n(1), n(4), n(4)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i**iii").unwrap()), (n(1), n(4), n(5)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**ii*ii").unwrap()), (n(1), n(4), n(6)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**i*iii").unwrap()), (n(1), n(4), n(7)));
+/// assert_eq!(lam_to_n(&read_lazy_k("***iiii").unwrap()), (n(1), n(4), n(8)));
 /// ```
 pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt, OwnInt) {
     let zero  = OwnInt::try_from(0).unwrap();
