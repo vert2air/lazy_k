@@ -249,57 +249,49 @@ fn sum(v: Vec<OwnInt>) -> OwnInt {
 ///         _ => panic!("lam_to_n(0)"),
 ///     }
 /// };
-/// assert_eq!(lam_to_n(&read_lazy_k("i").unwrap()), (n(3), n(1), n(0)));
-/// assert_eq!(lam_to_n(&read_lazy_k("k").unwrap()), (n(3), n(1), n(1)));
-/// assert_eq!(lam_to_n(&read_lazy_k("s").unwrap()), (n(3), n(1), n(2)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`ii").unwrap()), (n(3), n(2), n(3)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`ik").unwrap()), (n(3), n(2), n(4)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`is").unwrap()), (n(3), n(2), n(5)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`ki").unwrap()), (n(3), n(2), n(6)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`kk").unwrap()), (n(3), n(2), n(7)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`ks").unwrap()), (n(3), n(2), n(8)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`si").unwrap()), (n(3), n(2), n(9)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`sk").unwrap()), (n(3), n(2), n(10)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`ss").unwrap()), (n(3), n(2), n(11)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`i`ii").unwrap()), (n(3), n(3), n(12)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`i`ik").unwrap()), (n(3), n(3), n(13)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`i`is").unwrap()), (n(3), n(3), n(14)));
-/// assert_eq!(lam_to_n(&read_lazy_k("`i`ki").unwrap()), (n(3), n(3), n(15)));
-/// assert_eq!(lam_to_n(&read_lazy_k("``kss").unwrap()), (n(3), n(3), n(56)));
-/// assert_eq!(lam_to_n(&read_lazy_k("``ski").unwrap()), (n(3), n(3), n(60)));
+/// assert_eq!(lam_to_n(&read_lazy_k("i").unwrap()), (n(3), n(0)));
+/// assert_eq!(lam_to_n(&read_lazy_k("k").unwrap()), (n(3), n(1)));
+/// assert_eq!(lam_to_n(&read_lazy_k("s").unwrap()), (n(3), n(2)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`ii").unwrap()), (n(3), n(3)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`ik").unwrap()), (n(3), n(4)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`is").unwrap()), (n(3), n(5)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`ki").unwrap()), (n(3), n(6)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`kk").unwrap()), (n(3), n(7)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`ks").unwrap()), (n(3), n(8)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`si").unwrap()), (n(3), n(9)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`sk").unwrap()), (n(3), n(10)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`ss").unwrap()), (n(3), n(11)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`i`ii").unwrap()), (n(3), n(12)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`i`ik").unwrap()), (n(3), n(13)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`i`is").unwrap()), (n(3), n(14)));
+/// assert_eq!(lam_to_n(&read_lazy_k("`i`ki").unwrap()), (n(3), n(15)));
+/// assert_eq!(lam_to_n(&read_lazy_k("``kss").unwrap()), (n(3), n(56)));
+/// assert_eq!(lam_to_n(&read_lazy_k("``ski").unwrap()), (n(3), n(60)));
 /// 
-/// assert_eq!(lam_to_n(&read_lazy_k("*ii").unwrap()), (n(1), n(2), n(1)));
-/// assert_eq!(lam_to_n(&read_lazy_k("*i*ii").unwrap()), (n(1), n(3), n(2)));
-/// assert_eq!(lam_to_n(&read_lazy_k("**iii").unwrap()), (n(1), n(3), n(3)));
-/// assert_eq!(lam_to_n(&read_lazy_k("*i*i*ii").unwrap()), (n(1), n(4), n(4)));
-/// assert_eq!(lam_to_n(&read_lazy_k("*i**iii").unwrap()), (n(1), n(4), n(5)));
-/// assert_eq!(lam_to_n(&read_lazy_k("**ii*ii").unwrap()), (n(1), n(4), n(6)));
-/// assert_eq!(lam_to_n(&read_lazy_k("**i*iii").unwrap()), (n(1), n(4), n(7)));
-/// assert_eq!(lam_to_n(&read_lazy_k("***iiii").unwrap()), (n(1), n(4), n(8)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*ii").unwrap()), (n(1), n(1)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i*ii").unwrap()), (n(1), n(2)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**iii").unwrap()), (n(1), n(3)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i*i*ii").unwrap()), (n(1), n(4)));
+/// assert_eq!(lam_to_n(&read_lazy_k("*i**iii").unwrap()), (n(1), n(5)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**ii*ii").unwrap()), (n(1), n(6)));
+/// assert_eq!(lam_to_n(&read_lazy_k("**i*iii").unwrap()), (n(1), n(7)));
+/// assert_eq!(lam_to_n(&read_lazy_k("***iiii").unwrap()), (n(1), n(8)));
 /// ```
-pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt, OwnInt) {
+pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt) {
     let zero  = OwnInt::try_from(0).unwrap();
     let one   = OwnInt::try_from(1).unwrap();
     let two   = OwnInt::try_from(2).unwrap();
     let three = OwnInt::try_from(3).unwrap();
     match lam.extract() {
-        LamExpr::Nm { name } if **name == "I" => (three, one, zero),
-        LamExpr::Nm { name } if **name == "K" => (three, one.clone(), one),
-        LamExpr::Nm { name } if **name == "S" => (three, one, two),
-        LamExpr::Nm { name } if **name == "iota" => (one.clone(), one, zero),
-        LamExpr::App { func, oprd, .. } => {
-            let (tf, cf, nf) = lam_to_n(func);
-            let (_t, co, no) = lam_to_n(oprd);
-            let cfi = match usize::try_from(cf.clone()) {
-                Ok(n) => n,
-                _ => panic!("lam_to_n(3)"),
-            };
-            let coi = match usize::try_from(co.clone()) {
-                Ok(n) => n,
-                _ => panic!("lam_to_n(3)"),
-            };
+        LamExpr::Nm { name } if **name == "I" => (three, zero),
+        LamExpr::Nm { name } if **name == "K" => (three, one),
+        LamExpr::Nm { name } if **name == "S" => (three, two),
+        LamExpr::Nm { name } if **name == "iota" => (one, zero),
+        LamExpr::App { func, oprd, size } => {
+            let (tf, nf) = lam_to_n(func);
+            let (_t, no) = lam_to_n(oprd);
             let mut lsiz = vec![tf.clone()];
-            for _ in 1 .. cfi.clone() + coi.clone() - 1 {
+            for _ in 1 .. (size + 1) / 2 - 1 {
                 let n = mul_up_down(lsiz.clone());
                 lsiz.push(sum(n));
             }
@@ -307,10 +299,10 @@ pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt, OwnInt) {
             let (_, no2) = sub_rem(no, lsiz.clone());
             let ud = mul_up_down(lsiz.clone());
             let mut a = zero;
-            for i in 0 .. cfi - 1 {
+            for i in 0 .. (func.len() - 1) / 2 {
                 a += ud[i].clone();
             }
-            (tf, cf + co, lsiz[coi - 1].clone() * nf2 + no2 + a + sum(lsiz))
+            (tf, lsiz[(oprd.len() - 1) / 2].clone() * nf2 + no2 + a + sum(lsiz))
         },
         _ => panic!("lam_to_n"),
     }
