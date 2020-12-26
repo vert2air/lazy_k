@@ -44,17 +44,17 @@ use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 /// assert_eq!( Ok( n_to_unlam(bn( 9)) ), read_lazy_k("`si")   );
 /// assert_eq!( Ok( n_to_unlam(bn(10)) ), read_lazy_k("`sk")   );
 /// assert_eq!( Ok( n_to_unlam(bn(11)) ), read_lazy_k("`ss")   );
-/// assert_eq!( Ok( n_to_unlam(bn(12)) ), read_lazy_k("`i`ii") );
-/// assert_eq!( Ok( n_to_unlam(bn(30)) ), read_lazy_k("`s`ii") );
+/// assert_eq!( Ok( n_to_unlam(bn(56)) ), read_lazy_k("``kss") );
+/// assert_eq!( Ok( n_to_unlam(bn(60)) ), read_lazy_k("``ski") );
 /// ```
 pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
 
-// Transform an Integer of Godel Number to Unlambda style expression.
-// But if there is a shorter Unlambda style expression obviously,
-// This function returns Nothing.
-
+/// Transform an Integer of Godel Number to Unlambda style expression.
+/// But if there is a shorter Unlambda style expression obviously,
+/// This function returns Nothing.
+///
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_godel_number::n_to_min_unlam;
@@ -70,9 +70,11 @@ pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
 ///         _ => panic!("bn"),
 ///     }
 /// }
-/// assert_eq!( n_to_min_unlam(bn( 3)), None );   // `ii
-/// assert_eq!( n_to_min_unlam(bn( 4)), None );   // `ik
-/// assert_eq!( n_to_min_unlam(bn( 5)), None );   // `is
+/// assert_eq!( n_to_min_unlam(bn( 3)), None );   // `ii -> i
+/// assert_eq!( n_to_min_unlam(bn( 4)), None );   // `ik -> k
+/// assert_eq!( n_to_min_unlam(bn( 5)), None );   // `is -> s
+/// assert_eq!( n_to_min_unlam(bn(56)), None );   // ``kss -> s (kXY -> Y
+/// assert_eq!( n_to_min_unlam(bn(60)), None );   // ``ski -> i
 /// ```
 pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
     n_to_min_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
