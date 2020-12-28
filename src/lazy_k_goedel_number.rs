@@ -1,5 +1,5 @@
 //extern crate num_bigint;
-extern crate num_traits;
+//extern crate num_traits;
 
 use std::convert::TryFrom;
 use std::ops::AddAssign;
@@ -7,13 +7,13 @@ use std::ops::Sub;
 use std::ops::SubAssign;
 use std::ops::Mul;
 use std::vec::Vec;
-use num_bigint::BigInt;
-use num_traits::Zero;
+//use num_bigint::BigInt;
+//use num_traits::{Zero, One};
 
-pub type OurInt = BigInt;
-pub fn our0() -> OurInt { Zero::zero() }
-//pub type OurInt = i64;
-//pub fn our0() -> OurInt { 0 }
+//pub type OurInt = BigInt;
+//pub fn our0() -> OurInt { Zero::zero() }
+pub type OurInt = i64;
+pub fn our0() -> OurInt { 0 }
 
 use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 
@@ -22,10 +22,10 @@ use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_goedel_number::n_to_unlam;
 /// use std::convert::TryFrom;
-/// use num_bigint::BigInt;
+/// //use num_bigint::BigInt;
 /// 
-/// type OurInt = BigInt;
-/// //type OurInt = i64;
+/// //type OurInt = BigInt;
+/// type OurInt = i64;
 /// 
 /// fn bn(a: i32) -> OurInt {
 ///     match OurInt::try_from(a) {
@@ -60,10 +60,10 @@ pub fn n_to_unlam(n: OurInt) -> PLamExpr {
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_goedel_number::n_to_min_unlam;
 /// use std::convert::TryFrom;
-/// use num_bigint::BigInt;
+/// //use num_bigint::BigInt;
 /// 
-/// type OurInt = BigInt;
-/// //type OurInt = i64;
+/// //type OurInt = BigInt;
+/// type OurInt = i64;
 /// 
 /// fn bn(a: i32) -> OurInt {
 ///     match OurInt::try_from(a) {
@@ -85,10 +85,10 @@ pub fn n_to_min_unlam(n: OurInt) -> Option<PLamExpr> {
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_goedel_number::n_to_iota;
 /// use std::convert::TryFrom;
-/// use num_bigint::BigInt;
+/// //use num_bigint::BigInt;
 /// 
-/// type OurInt = BigInt;
-/// //type OurInt = i64;
+/// //type OurInt = BigInt;
+/// type OurInt = i64;
 /// 
 /// fn bn(a: i32) -> OurInt {
 ///     match OurInt::try_from(a) {
@@ -241,9 +241,9 @@ fn sum(v: Vec<OurInt>) -> OurInt {
 /// use lazy_k::lazy_k_read::read_lazy_k;
 /// use lazy_k::lazy_k_goedel_number::lam_to_n;
 /// use std::convert::TryFrom;
-/// use num_bigint::BigInt;
-/// type OurInt = BigInt;
-/// //type OurInt = i64;
+/// //use num_bigint::BigInt;
+/// //type OurInt = BigInt;
+/// type OurInt = i64;
 /// fn n(num: u32) -> OurInt {
 ///     match OurInt::try_from(num) {
 ///         Ok(a) => a,
