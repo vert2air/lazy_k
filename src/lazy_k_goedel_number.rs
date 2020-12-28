@@ -8,12 +8,14 @@ use std::ops::SubAssign;
 use std::ops::Mul;
 use std::vec::Vec;
 use num_bigint::BigInt;
-use num_traits::Zero;
+use num_traits::{Zero, One};
 
 pub type OurInt = BigInt;
 pub fn our0() -> OurInt { Zero::zero() }
+pub fn our1() -> OurInt { One::one() }
 //pub type OurInt = i64;
 //pub fn our0() -> OurInt { 0 }
+//pub fn our1() -> OurInt { 1 }
 
 use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 
