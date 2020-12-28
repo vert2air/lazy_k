@@ -10,23 +10,25 @@ use std::vec::Vec;
 use num_bigint::BigInt;
 use num_traits::Zero;
 
-type OwnInt = BigInt;
-//type OwnInt = i64;
+pub type OurInt = BigInt;
+pub fn our0() -> OurInt { Zero::zero() }
+//pub type OurInt = i64;
+//pub fn our0() -> OurInt { 0 }
 
 use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 
 
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_godel_number::n_to_unlam;
+/// use lazy_k::lazy_k_goedel_number::n_to_unlam;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
-/// type OwnInt = BigInt;
-/// //type OwnInt = i64;
+/// type OurInt = BigInt;
+/// //type OurInt = i64;
 /// 
-/// fn bn(a: i32) -> OwnInt {
-///     match OwnInt::try_from(a) {
+/// fn bn(a: i32) -> OurInt {
+///     match OurInt::try_from(a) {
 ///         Ok(a2) => a2,
 ///         _ => panic!("bn"),
 ///     }
@@ -46,25 +48,25 @@ use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 /// assert_eq!( Ok( n_to_unlam(bn(56)) ), read_lazy_k("``kss") );
 /// assert_eq!( Ok( n_to_unlam(bn(60)) ), read_lazy_k("``ski") );
 /// ```
-pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
+pub fn n_to_unlam(n: OurInt) -> PLamExpr {
     n_to_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
 
-/// Transform an Integer of Godel Number to Unlambda style expression.
+/// Transform an Integer of Goedel Number to Unlambda style expression.
 /// But if there is a shorter Unlambda style expression obviously,
 /// This function returns Nothing.
 ///
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_godel_number::n_to_min_unlam;
+/// use lazy_k::lazy_k_goedel_number::n_to_min_unlam;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
-/// type OwnInt = BigInt;
-/// //type OwnInt = i64;
+/// type OurInt = BigInt;
+/// //type OurInt = i64;
 /// 
-/// fn bn(a: i32) -> OwnInt {
-///     match OwnInt::try_from(a) {
+/// fn bn(a: i32) -> OurInt {
+///     match OurInt::try_from(a) {
 ///         Ok(a2) => a2,
 ///         _ => panic!("bn"),
 ///     }
@@ -75,21 +77,21 @@ pub fn n_to_unlam(n: OwnInt) -> PLamExpr {
 /// assert_eq!( n_to_min_unlam(bn(56)), None );   // ``kss -> s (kXY -> Y
 /// assert_eq!( n_to_min_unlam(bn(60)), None );   // ``ski -> i
 /// ```
-pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
+pub fn n_to_min_unlam(n: OurInt) -> Option<PLamExpr> {
     n_to_min_expr(vec!["I".to_string(), "K".to_string(), "S".to_string()], n)
 }
 
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_godel_number::n_to_iota;
+/// use lazy_k::lazy_k_goedel_number::n_to_iota;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
-/// type OwnInt = BigInt;
-/// //type OwnInt = i64;
+/// type OurInt = BigInt;
+/// //type OurInt = i64;
 /// 
-/// fn bn(a: i32) -> OwnInt {
-///     match OwnInt::try_from(a) {
+/// fn bn(a: i32) -> OurInt {
+///     match OurInt::try_from(a) {
 ///         Ok(a2) => a2,
 ///         _ => panic!("bn"),
 ///     }
@@ -99,28 +101,28 @@ pub fn n_to_min_unlam(n: OwnInt) -> Option<PLamExpr> {
 /// assert_eq!( Ok( n_to_iota(bn( 4)) ), read_lazy_k("*i*i*ii") );
 /// assert_eq!( Ok( n_to_iota(bn( 9)) ), read_lazy_k("*i*i*i*ii") );
 /// ```
-pub fn n_to_iota(n: OwnInt) -> PLamExpr {
-    if n == Zero::zero() {
+pub fn n_to_iota(n: OurInt) -> PLamExpr {
+    if n == our0() {
         panic!("n_to_iota(0) is not defined.");
     }
     n_to_expr(vec!["iota".to_string()], n)
 }
 /*
-pub fn n_to_min_iota(n: OwnInt) -> Option<PLamExpr> {
+pub fn n_to_min_iota(n: OurInt) -> Option<PLamExpr> {
     n_to_min_expr( {"iota"], n );
     None
 }
 */
-fn n_to_expr(b: Vec<String>, n: OwnInt) -> PLamExpr {
-    let lsiz = match OwnInt::try_from(b.len()) {
+fn n_to_expr(b: Vec<String>, n: OurInt) -> PLamExpr {
+    let lsiz = match OurInt::try_from(b.len()) {
         Ok(size) => build_layer(size, n.clone()),
         Err(_) => panic!("n_to_expr"),
     };
-    let sum: OwnInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
+    let sum: OurInt = lsiz.iter().fold(our0(), |acc, a| acc + a);
     n_to_expr_aux(b, &lsiz[..], n - sum)
 }
 
-fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
+fn n_to_expr_aux(b: Vec<String>, lsiz: &[OurInt], n: OurInt) -> PLamExpr {
     if lsiz.len() == 0 {
         match usize::try_from(n.clone()) {
             Ok(u) => return nm(&b[u]),
@@ -135,16 +137,16 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt) -> PLamExpr {
     f * o
 }
 
-fn n_to_min_expr(b: Vec<String>, n: OwnInt) -> Option<PLamExpr> {
-    let lsiz = match OwnInt::try_from(b.len()) {
+fn n_to_min_expr(b: Vec<String>, n: OurInt) -> Option<PLamExpr> {
+    let lsiz = match OurInt::try_from(b.len()) {
         Ok(size) => build_layer(size, n.clone()),
         Err(_) => panic!("n_to_expr"),
     };
-    let sum: OwnInt = lsiz.iter().fold(Zero::zero(), |acc, a| acc + a);
+    let sum: OurInt = lsiz.iter().fold(our0(), |acc, a| acc + a);
     n_to_min_expr_aux(b, &lsiz[..], n - sum)
 }
 
-fn n_to_min_expr_aux(b: Vec<String>, lsiz: &[OwnInt], n: OwnInt)
+fn n_to_min_expr_aux(b: Vec<String>, lsiz: &[OurInt], n: OurInt)
                                                         -> Option<PLamExpr> {
     if lsiz.len() == 0 {
         match usize::try_from(n.clone()) {
@@ -223,11 +225,11 @@ fn mul_up_down<T: Mul<Output = T> + Clone>(es: &Vec<T>) -> Vec<T> {
     res
 }
 
-// pub fn n_to_jot(n: OwnInt) -> String
+// pub fn n_to_jot(n: OurInt) -> String
 
-fn sum(v: Vec<OwnInt>) -> OwnInt {
+fn sum(v: Vec<OurInt>) -> OurInt {
     let it = v.iter();
-    let mut sz = Zero::zero();
+    let mut sz = our0();
     for e in it {
         sz += e.clone();
     }
@@ -237,13 +239,13 @@ fn sum(v: Vec<OwnInt>) -> OwnInt {
 /// ```
 /// use lazy_k::lazy_k_core::i;
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_godel_number::lam_to_n;
+/// use lazy_k::lazy_k_goedel_number::lam_to_n;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
-/// type OwnInt = BigInt;
-/// //type OwnInt = i64;
-/// fn n(num: u32) -> OwnInt {
-///     match OwnInt::try_from(num) {
+/// type OurInt = BigInt;
+/// //type OurInt = i64;
+/// fn n(num: u32) -> OurInt {
+///     match OurInt::try_from(num) {
 ///         Ok(a) => a,
 ///         _ => panic!("lam_to_n(0)"),
 ///     }
@@ -276,11 +278,11 @@ fn sum(v: Vec<OwnInt>) -> OwnInt {
 /// assert_eq!(lam_to_n(&read_lazy_k("**i*iii").unwrap()), (n(1), n(7)));
 /// assert_eq!(lam_to_n(&read_lazy_k("***iiii").unwrap()), (n(1), n(8)));
 /// ```
-pub fn lam_to_n(lam: &PLamExpr) -> (OwnInt, OwnInt) {
-    let zero  = OwnInt::try_from(0).unwrap();
-    let one   = OwnInt::try_from(1).unwrap();
-    let two   = OwnInt::try_from(2).unwrap();
-    let three = OwnInt::try_from(3).unwrap();
+pub fn lam_to_n(lam: &PLamExpr) -> (OurInt, OurInt) {
+    let zero  = OurInt::try_from(0).unwrap();
+    let one   = OurInt::try_from(1).unwrap();
+    let two   = OurInt::try_from(2).unwrap();
+    let three = OurInt::try_from(3).unwrap();
     match lam.extract() {
         LamExpr::Nm { name } if **name == "I" => (three, zero),
         LamExpr::Nm { name } if **name == "K" => (three, one),
