@@ -35,7 +35,17 @@ fn i() -> PAnaLam { nm("I") }
 fn k() -> PAnaLam { nm("K") }
 fn s() -> PAnaLam { nm("S") }
 
+/*
+pub fn mine_ch_num(a: PAnaLam) -> Result<(u32, u32), String> {
+    a.to_lam().get_num_n(5_000)
+}
 
+fn (f: OurInt, t: Option<OurInt>) {
+    let mut a = f;
+    PAnaLam::first_min_from(a).set_n()
+    if 
+}
+*/
 impl PAnaLam {
 
     fn new_from_lam(lam: &PLamExpr) -> Self {
@@ -203,4 +213,24 @@ fn test_first_min_size() {
                                             read_lazy_k("`k`ki").unwrap());
     assert_eq!(PAnaLam::first_min_size(7).to_lam(),
                                             read_lazy_k("`k`k`ki").unwrap());
+}
+
+#[test]
+fn test_next_min() {
+    let a = PAnaLam::new_from_lam(&read_lazy_k("i").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("k").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("s").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`ki").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`kk").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`ks").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`si").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`sk").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`ss").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`ki").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`kk").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`ks").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`si").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`sk").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`k`ss").unwrap());
+    let a = a.next_min(); assert_eq!(a.to_lam(), read_lazy_k("`s`ki").unwrap());
 }
