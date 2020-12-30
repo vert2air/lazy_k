@@ -7,11 +7,10 @@ use super::lazy_k_goedel_number;
 use super::lazy_k_goedel_number::{OurInt, our1};
 use super::lazy_k_read::read_lazy_k;
 
-/*
-pub fn mine_ch_num(a: PAnaLam) -> Result<(u32, u32), String> {
-    a.to_lam().get_num_n(5_000)
+pub fn mine_ch_num(a: PLamExpr) -> Result<(u32, u32), String> {
+    a.get_num_n(5_000)
 }
-
+/*
 fn (f: OurInt, t: Option<OurInt>) {
     let mut a = f;
     PAnaLam::first_min_from(a).set_n()
@@ -19,6 +18,17 @@ fn (f: OurInt, t: Option<OurInt>) {
 }
 */
 
+//struct PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
+struct PLamExprIter {
+    next_one: Option<PLamExpr>,
+    last_one: Option<PLamExpr>,
+    //next: F,
+    next: fn(&PLamExpr) -> PLamExpr,
+    to_one: Option<PLamExpr>,
+}
+
+
+//impl PLamExpr<F> {
 impl PLamExpr {
 
     fn is_min(&self) -> bool {
@@ -45,13 +55,12 @@ impl PLamExpr {
         }
     }
 
-    fn first_min_from(n: OurInt) -> Self {
-        let an = lazy_k_goedel_number::n_to_unlam(n);
-        if an.is_min() {
-            an
-        } else {
-            an.next_min()
+    fn first_size(n: usize) -> Self {
+        let mut res = i();
+        for _ in 1 .. (n + 1)/2 {
+            res = i() * res
         }
+        res
     }
 
     fn first_min_size(n: usize) -> Self {
@@ -62,14 +71,12 @@ impl PLamExpr {
         res
     }
 
-    fn next_min(&self) -> Self {
+    fn next_min(last: &PLamExpr) -> PLamExpr {
         fn otherwise(f1: &PLamExpr, o1: &PLamExpr) -> PLamExpr {
-            let f1_n = f1.next_min();
-            let o1_n = o1.next_min();
+            let f1_n = PLamExpr::next_min(f1);
+            let o1_n = PLamExpr::next_min(o1);
             if f1.is_min() && o1_n.len() == o1.len() {
                 f1.clone() * o1_n
-            } else if f1_n.len() == f1.len() {
-                f1_n * PLamExpr::first_min_size(o1.len())
             } else if f1_n.len() < 1 + f1.len() + o1.len() {
                 f1_n.clone()
                     * PLamExpr::first_min_size(f1.len() + o1.len() - f1_n.len())
@@ -77,24 +84,29 @@ impl PLamExpr {
                 PLamExpr::first_min_size(f1.len() + o1.len() + 1 + 2)
             }
         }
-        match self.extract() {
+        match last.extract() {
             LamExpr::App { func: f1, oprd: o1, .. } => {
                 let a = match &*f1.extract() {
                     LamExpr::Nm { name } if **name == "I" =>
-                        k() * Self::first_min_size(self.len() - 2),
+                        k() * PLamExpr::first_min_size(last.len() - 2),
                     LamExpr::App { func: f2, oprd: o2, .. } =>
                         match (&*f2.extract(), &*o2.extract()) {
                             (LamExpr::Nm { name }, _) if &**name == "K" =>
-                                s() * Self::first_min_size(o2.len())
-                                    * Self::first_min_size(o1.len()),
+                                s() * PLamExpr::first_min_size(o2.len())
+                                    * PLamExpr::first_min_size(o1.len()),
                             (LamExpr::Nm { name: n2 }, LamExpr::Nm { name: n3 })
-                                if &**n2 == "S" && &**n3 == "K" =>
-                                    s() * s() * Self::first_min_size(o1.len()),
+                                if &**n2 == "S" && &**n3 == "K" => s() * s()
+                                        * PLamExpr::first_min_size(o1.len()),
                             _ => otherwise(f1, o1),
                         },
                     _ => otherwise(f1, o1),
                 };
-                a.try_min()
+                //a.try_min()
+                match a.extract() {
+                    LamExpr::Nm {..} => a.clone(),
+                    LamExpr::App {..} if a.is_min() => a.clone(),
+                    _ => PLamExpr::next_min(&a),
+                }
             }
             LamExpr::Nm { name } if **name == "I" => k(),
             LamExpr::Nm { name } if **name == "K" => s(),
@@ -102,12 +114,122 @@ impl PLamExpr {
             _ => panic!("next_min"),
         }
     }
-
-    fn try_min(&self) -> Self {
+    /*
+    fn try_min(&self) -> PLamExpr {
         match self.extract() {
             LamExpr::Nm {..} => (*self).clone(),
             LamExpr::App {..} if self.is_min() => self.clone(),
             _ => self.next_min(),
+        }
+    }
+    */
+}
+
+//impl PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
+//impl PLamExprIter<F> {
+impl PLamExprIter {
+
+    pub fn new(f: OurInt, t: Option<OurInt>) -> Self {
+        //PLamExprIter::<F> {
+        PLamExprIter {
+            next_one: Some(lazy_k_goedel_number::n_to_unlam(f)),
+            last_one: None,
+            next: PLamExprIter::next_all,
+            to_one: match t {
+                Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
+                None => None,
+            },
+        }
+    }
+
+    pub fn new_min(f: OurInt, t: Option<OurInt>) -> Self {
+        let an = lazy_k_goedel_number::n_to_unlam(f);
+        let oto = match t {
+            Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
+            None => None,
+        };
+        if an.is_min() {
+            //PLamExprIter::<F> {
+            PLamExprIter {
+                next_one: Some(an),
+                last_one: None,
+                next: PLamExpr::next_min,
+                to_one: oto,
+            }
+        } else {
+            //PLamExprIter::<F> {
+            PLamExprIter {
+                next_one: Some(PLamExpr::next_min(&an)),
+                last_one: None,
+                next: PLamExpr::next_min,
+                to_one: oto,
+            }
+        }
+    }
+
+    pub fn new_min_size(n: usize, t: Option<OurInt>) -> Self {
+        let mut res = i();
+        for _ in 1 .. (n + 1)/2 {
+            res = k() * res
+        }
+        //PLamExprIter::<F> {
+        PLamExprIter {
+            next_one: Some(res),
+            last_one: None,
+            next: PLamExpr::next_min,
+            to_one: match t {
+                Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
+                None => None,
+            },
+        }
+    }
+
+    fn next_all(last: &PLamExpr) -> PLamExpr {
+        match last.extract() {
+            LamExpr::App { func: f1, oprd: o1, .. } => {
+                let f1_n = PLamExprIter::next_all(f1);
+                let o1_n = PLamExprIter::next_all(o1);
+                if o1_n.len() == o1.len() {
+                    f1.clone() * o1_n
+                } else if f1_n.len() < 1 + f1.len() + o1.len() {
+                    f1_n.clone()
+                        * PLamExpr::first_size(f1.len() + o1.len() - f1_n.len())
+                } else {
+                    PLamExpr::first_size(f1.len() + o1.len() + 1 + 2)
+                }
+            }
+            LamExpr::Nm { name } if **name == "I" => k(),
+            LamExpr::Nm { name } if **name == "K" => s(),
+            LamExpr::Nm { name } if **name == "S" => i() * i(),
+            _ => panic!("next_all"),
+        }
+    }
+
+}
+
+//impl Iterator for PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
+impl Iterator for PLamExprIter {
+    type Item = PLamExpr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let new_last = match (self.next_one.clone(), self.last_one.clone()) {
+            (Some(n), None) if n.is_min() => n,
+            (Some(n), None) => PLamExpr::next_min(&n),
+            (None, Some(l)) => PLamExpr::next_min(&l),
+            (None, None) => return None,
+            _ => panic!("PLamExprIter::next"),
+        };
+        match self.to_one.clone() {
+            Some(to) if new_last >= to => {
+                self.next_one = None;
+                self.last_one = None;
+                None
+            },
+            _ => {
+                self.next_one = None;
+                self.last_one = Some(new_last.clone());
+                Some(new_last)
+            },
         }
     }
 
