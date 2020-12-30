@@ -314,23 +314,7 @@ pub fn lam_to_n(lam: &PLamExpr) -> (OurInt, OurInt) {
 
 impl PartialOrd for PLamExpr {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let lo = self.len().partial_cmp(&other.len());
-        match lo {
-            Some(Ordering::Equal) => match (self.extract(), other.extract()) {
-                (LamExpr::Nm { name: n1}, LamExpr::Nm { name: n2}) =>
-                    n1.partial_cmp(&n2),
-                (LamExpr::App { func: f1, oprd: o1, .. },
-                                LamExpr::App { func: f2, oprd: o2, .. }) => {
-                    let fo = f1.partial_cmp(&f2);
-                    match fo {
-                        Some(Ordering::Equal) => o1.partial_cmp(&o2),
-                        _ => fo,
-                    }
-                }
-                _ => panic!("PartilaOrd<PLamExpr>::partial_cmp"),
-            }
-            _ => lo
-        }
+        Some(self.cmp(other))
     }
 }
 

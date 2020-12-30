@@ -18,17 +18,14 @@ fn (f: OurInt, t: Option<OurInt>) {
 }
 */
 
-//struct PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
 struct PLamExprIter {
     next_one: Option<PLamExpr>,
     last_one: Option<PLamExpr>,
-    //next: F,
     next: fn(&PLamExpr) -> PLamExpr,
     to_one: Option<PLamExpr>,
 }
 
 
-//impl PLamExpr<F> {
 impl PLamExpr {
 
     fn is_min(&self) -> bool {
@@ -101,7 +98,6 @@ impl PLamExpr {
                         },
                     _ => otherwise(f1, o1),
                 };
-                //a.try_min()
                 match a.extract() {
                     LamExpr::Nm {..} => a.clone(),
                     LamExpr::App {..} if a.is_min() => a.clone(),
@@ -114,23 +110,11 @@ impl PLamExpr {
             _ => panic!("next_min"),
         }
     }
-    /*
-    fn try_min(&self) -> PLamExpr {
-        match self.extract() {
-            LamExpr::Nm {..} => (*self).clone(),
-            LamExpr::App {..} if self.is_min() => self.clone(),
-            _ => self.next_min(),
-        }
-    }
-    */
 }
 
-//impl PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
-//impl PLamExprIter<F> {
 impl PLamExprIter {
 
     pub fn new(f: OurInt, t: Option<OurInt>) -> Self {
-        //PLamExprIter::<F> {
         PLamExprIter {
             next_one: Some(lazy_k_goedel_number::n_to_unlam(f)),
             last_one: None,
@@ -149,7 +133,6 @@ impl PLamExprIter {
             None => None,
         };
         if an.is_min() {
-            //PLamExprIter::<F> {
             PLamExprIter {
                 next_one: Some(an),
                 last_one: None,
@@ -157,7 +140,6 @@ impl PLamExprIter {
                 to_one: oto,
             }
         } else {
-            //PLamExprIter::<F> {
             PLamExprIter {
                 next_one: Some(PLamExpr::next_min(&an)),
                 last_one: None,
@@ -172,7 +154,6 @@ impl PLamExprIter {
         for _ in 1 .. (n + 1)/2 {
             res = k() * res
         }
-        //PLamExprIter::<F> {
         PLamExprIter {
             next_one: Some(res),
             last_one: None,
@@ -207,7 +188,6 @@ impl PLamExprIter {
 
 }
 
-//impl Iterator for PLamExprIter<F: Fn(&PLamExpr) -> Option<PLamExpr>> {
 impl Iterator for PLamExprIter {
     type Item = PLamExpr;
 
