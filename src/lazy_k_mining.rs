@@ -110,6 +110,28 @@ impl PLamExpr {
             _ => panic!("next_min"),
         }
     }
+
+    fn next_all(last: &PLamExpr) -> PLamExpr {
+        match last.extract() {
+            LamExpr::App { func: f1, oprd: o1, .. } => {
+                let f1_n = PLamExpr::next_all(f1);
+                let o1_n = PLamExpr::next_all(o1);
+                if o1_n.len() == o1.len() {
+                    f1.clone() * o1_n
+                } else if f1_n.len() < 1 + f1.len() + o1.len() {
+                    f1_n.clone()
+                        * PLamExpr::first_size(f1.len() + o1.len() - f1_n.len())
+                } else {
+                    PLamExpr::first_size(f1.len() + o1.len() + 1 + 2)
+                }
+            }
+            LamExpr::Nm { name } if **name == "I" => k(),
+            LamExpr::Nm { name } if **name == "K" => s(),
+            LamExpr::Nm { name } if **name == "S" => i() * i(),
+            _ => panic!("next_all"),
+        }
+    }
+
 }
 
 impl PLamExprIter {
@@ -118,7 +140,7 @@ impl PLamExprIter {
         PLamExprIter {
             next_one: Some(lazy_k_goedel_number::n_to_unlam(f)),
             last_one: None,
-            next: PLamExprIter::next_all,
+            next: PLamExpr::next_all,
             to_one: match t {
                 Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
                 None => None,
@@ -162,27 +184,6 @@ impl PLamExprIter {
                 Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
                 None => None,
             },
-        }
-    }
-
-    fn next_all(last: &PLamExpr) -> PLamExpr {
-        match last.extract() {
-            LamExpr::App { func: f1, oprd: o1, .. } => {
-                let f1_n = PLamExprIter::next_all(f1);
-                let o1_n = PLamExprIter::next_all(o1);
-                if o1_n.len() == o1.len() {
-                    f1.clone() * o1_n
-                } else if f1_n.len() < 1 + f1.len() + o1.len() {
-                    f1_n.clone()
-                        * PLamExpr::first_size(f1.len() + o1.len() - f1_n.len())
-                } else {
-                    PLamExpr::first_size(f1.len() + o1.len() + 1 + 2)
-                }
-            }
-            LamExpr::Nm { name } if **name == "I" => k(),
-            LamExpr::Nm { name } if **name == "K" => s(),
-            LamExpr::Nm { name } if **name == "S" => i() * i(),
-            _ => panic!("next_all"),
         }
     }
 
