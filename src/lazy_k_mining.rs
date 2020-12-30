@@ -234,19 +234,19 @@ fn test_first_min_size() {
 #[test]
 fn test_next_min() {
     let a = read_lazy_k("i").unwrap();
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("k").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("s").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`ki").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`kk").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`ks").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`si").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`sk").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`ss").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`ki").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`kk").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`ks").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`si").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`sk").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`k`ss").unwrap());
-    let a = a.next_min(); assert_eq!(a, read_lazy_k("`s`ki").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("k").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("s").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`ki").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`kk").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`ks").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`si").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`sk").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`ss").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`ki").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`kk").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`ks").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`si").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`sk").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`ss").unwrap());
+    let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`s`ki").unwrap());
 }
