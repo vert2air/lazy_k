@@ -10,13 +10,22 @@ use super::lazy_k_read::read_lazy_k;
 pub fn mine_ch_num(a: PLamExpr) -> Result<(u32, u32), String> {
     a.get_num_n(5_000)
 }
-/*
-fn (f: OurInt, t: Option<OurInt>) {
-    let mut a = f;
-    PAnaLam::first_min_from(a).set_n()
-    if 
+
+pub fn mining(f: OurInt, t: Option<OurInt>) {
+    let it = PLamExprIter::new_min(f, t);
+    let mut pre = i();
+    for e in it {
+        match mine_ch_num(e.clone()) {
+            Ok((num, c)) => {
+                println!("Found {} = {}", num, e.to_unlam().unwrap())
+            }
+            Err(msg) => {
+                println!("Error : {}: {}", e.to_unlam().unwrap(), msg)
+            }
+        }
+        pre = e;
+    };
 }
-*/
 
 struct PLamExprIter {
     next_one: Option<PLamExpr>,
@@ -33,8 +42,8 @@ impl PLamExpr {
         match self.extract() {
             LamExpr::App { func: f1, oprd: o1, .. } => {
                 f1.is_min() && o1.is_min() && match f1.extract() {
-                    LamExpr::Nm { name } if **name == "I" => false,
-                    LamExpr::Nm { name }                  => true,
+                    LamExpr::Nm { name } if **name == "I"   => false,
+                    LamExpr::Nm {..}                        => true,
                     LamExpr::App { func: f2, oprd: o2, .. } =>
                         match (f2.extract(), o2.extract()) {
                             (LamExpr::Nm { name }, _)
@@ -174,7 +183,7 @@ impl PLamExprIter {
             }
         }
     }
-
+/*
     pub fn new_min_size(n: usize, t: Option<OurInt>) -> Self {
         let mut res = i();
         for _ in 1 .. (n + 1)/2 {
@@ -191,7 +200,7 @@ impl PLamExprIter {
             },
         }
     }
-
+*/
 }
 
 impl Iterator for PLamExprIter {
