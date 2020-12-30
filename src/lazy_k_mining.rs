@@ -22,6 +22,7 @@ struct PLamExprIter {
     next_one: Option<PLamExpr>,
     last_one: Option<PLamExpr>,
     next: fn(&PLamExpr) -> PLamExpr,
+    need_min: bool,
     to_one: Option<PLamExpr>,
 }
 
@@ -141,6 +142,7 @@ impl PLamExprIter {
             next_one: Some(lazy_k_goedel_number::n_to_unlam(f)),
             last_one: None,
             next: PLamExpr::next_all,
+            need_min: false,
             to_one: match t {
                 Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
                 None => None,
@@ -159,6 +161,7 @@ impl PLamExprIter {
                 next_one: Some(an),
                 last_one: None,
                 next: PLamExpr::next_min,
+                need_min: true,
                 to_one: oto,
             }
         } else {
@@ -166,6 +169,7 @@ impl PLamExprIter {
                 next_one: Some(PLamExpr::next_min(&an)),
                 last_one: None,
                 next: PLamExpr::next_min,
+                need_min: true,
                 to_one: oto,
             }
         }
@@ -180,6 +184,7 @@ impl PLamExprIter {
             next_one: Some(res),
             last_one: None,
             next: PLamExpr::next_min,
+            need_min: true,
             to_one: match t {
                 Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
                 None => None,
@@ -194,10 +199,11 @@ impl Iterator for PLamExprIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         let new_last = match (self.next_one.clone(), self.last_one.clone()) {
-            (Some(n), None) if n.is_min() => n,
-            (Some(n), None) => PLamExpr::next_min(&n),
-            (None, Some(l)) => PLamExpr::next_min(&l),
-            (None, None) => return None,
+            (Some(n), None) if ! self.need_min => n,
+            (Some(n), None) if n.is_min()      => n,
+            (Some(n), None)                    => (self.next)(&n),
+            (None, Some(l))                    => (self.next)(&l),
+            (None, None)                       => return None,
             _ => panic!("PLamExprIter::next"),
         };
         match self.to_one.clone() {
