@@ -804,7 +804,6 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self, b: bool) -> Option<Self> {
-        //println!("eval_cc start: {}", self.clone().to_unlam().unwrap());
         match &*self.0.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" =>
