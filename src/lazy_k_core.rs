@@ -143,6 +143,10 @@ pub fn jot(j: &str) -> PLamExpr {
 
 impl PLamExpr {
 
+    pub fn new(a: &LamExpr) -> PLamExpr {
+        PLamExpr(Rc::new(a.clone()))
+    }
+
     pub fn extract(&self) -> &LamExpr {
         &*self.0
     }
@@ -800,7 +804,7 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self, b: bool) -> Option<Self> {
-        //println!("eval_cc start: {}", (*self.0.0).clone().to_string());
+        println!("eval_cc start: {}", self.clone().to_unlam().unwrap());
         match &*self.0.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" =>
@@ -868,6 +872,38 @@ impl ChNumEval {
             _ => panic!("ChNumEval::others received value other than App."),
         }
     }
+
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
+    /// fn test_eq(a: std::result::Result<String, String>, b: &str) {
+    ///     assert_eq!( a, Ok(b.to_string()));
+    /// }
+    ///
+    /// test_eq( ( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
+    /// ```
+    pub fn to_unlam(&self) -> Result<String, String> {
+        match &*self.0.0 {
+            LamExpr::Nm { name } if **name == "I" => Ok("i".to_string()),
+            LamExpr::Nm { name } if **name == "K" => Ok("k".to_string()),
+            LamExpr::Nm { name } if **name == "S" => Ok("s".to_string()),
+            LamExpr::Nm { name } if **name == "plus1" => Ok("(++)".to_string()),
+            LamExpr::App { func, oprd, .. } => {
+                match Self::new(func.clone()).to_unlam() {
+                    Ok(fc) =>
+                        match Self::new(oprd.clone()).to_unlam() {
+                            Ok(op) => Ok(format!("`{}{}", fc, op)),
+                            Err(e) => Err(e),
+                        },
+                    Err(e) => Err(e),
+                }
+            },
+            LamExpr::V { idx } => Ok(format!("({})", idx)),
+            LamExpr::Nm { name } =>
+                Err(format!("to_unlam: Unknown Combinator Name: {}", name)),
+            _ => Err(format!("to_unlam: Non-SKI LamExpr: {:?}", self))
+        }
+    }
+
 }
 
 #[test]
