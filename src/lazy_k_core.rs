@@ -687,7 +687,7 @@ pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
                         -> Result<(T, u32), (T, u32, String)>
         where F: Fn(&T) -> Option<T>, G: Fn(&T) -> Option<String> {
     let mut a = init;
-    for c in (1..cnt_max + 1).rev() {
+    for c in RevIter::new(cnt_max, 1) {
         match apply( &a ) {
             None     => return Ok((a, c)),
             Some(a1) => match check( &a1 ) {
@@ -697,6 +697,29 @@ pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
         }
     }
     Err((a, 0, "Time Limit".to_string()))
+}
+
+struct RevIter {
+    next: u32,
+    to: u32,
+}
+impl RevIter {
+    fn new(from: u32, to: u32) -> Self {
+        RevIter{ next: from, to: to }
+    }
+}
+impl Iterator for RevIter {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let cur = self.next;
+        if cur >= self.to {
+            self.next -= 1;
+            Some(cur)
+        } else {
+            None
+        }
+    }
 }
 
 impl Clone for PLamExpr {
