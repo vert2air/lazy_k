@@ -258,4 +258,8 @@ fn test_next_min() {
     let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`sk").unwrap());
     let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`k`ss").unwrap());
     let a=PLamExpr::next_min(&a); assert_eq!(a, read_lazy_k("`s`ki").unwrap());
+
+    let a = read_lazy_k("``s`k``s`si`sik").unwrap();
+    let a=PLamExpr::next_min(&a);
+    assert_eq!(a, read_lazy_k("``s`k``s`si`sis").unwrap());
 }

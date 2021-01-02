@@ -280,6 +280,11 @@ fn sum(v: Vec<OurInt>) -> OurInt {
 /// assert_eq!(lam_to_n(&read_lazy_k("**ii*ii").unwrap()), (n(1), n(6)));
 /// assert_eq!(lam_to_n(&read_lazy_k("**i*iii").unwrap()), (n(1), n(7)));
 /// assert_eq!(lam_to_n(&read_lazy_k("***iiii").unwrap()), (n(1), n(8)));
+/// 
+/// assert_eq!(lam_to_n(&read_lazy_k("``s`k``s`si`kik").unwrap()),
+///                                                     (n(3), n(2_471_467)));
+/// assert_eq!(lam_to_n(&read_lazy_k("``s`k``s`si`sik").unwrap()),
+///                                                     (n(3), n(2_471_476)));
 /// ```
 pub fn lam_to_n(lam: &PLamExpr) -> (OurInt, OurInt) {
     let zero  = OurInt::try_from(0).unwrap();
