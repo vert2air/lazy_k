@@ -8,7 +8,8 @@ use lazy_k::lazy_k_mining;
 
 fn main() {
     println!("Hello, world!");
-    let f = OurInt::try_from(1).unwrap();
+    //let f = OurInt::try_from(1).unwrap();
+    let f = OurInt::try_from(20_310).unwrap();
     let to = Some(OurInt::try_from(100).unwrap());
-    lazy_k_mining::mining(f, to);
+    lazy_k_mining::mining(f, None);
 }

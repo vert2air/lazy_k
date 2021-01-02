@@ -26,7 +26,7 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
 /// ```
 pub fn is_nil(e: &PLamExpr) -> bool {
     let aux =  e.clone() * (k() * ( k() * (k() * nm("false")))) * nm("true");
-    match ChNumEval::new(aux).eval_cc(true) {
+    match ChNumEval::new(aux).eval_cc() {
         Some(r) => match r.get_lam2() {
             LamExpr::Nm { name } if **name == "true".to_string() => true,
             _ => false,
