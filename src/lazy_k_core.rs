@@ -859,16 +859,12 @@ impl ChNumEval {
                     return ret;
                 }
                 None => {
-                    match tgt.extract() {
-                        LamExpr::App { func, oprd, .. } => {
-                            left = left.cons( (oprd.clone(), parents.cons(
-                                        PassInfo::Oprd { func: func.clone() }
-                            )) );
-                            left = left.cons( (func.clone(), parents.cons(
-                                        PassInfo::Func { oprd: oprd.clone() }
-                            )) );
-                        },
-                        _ => (),
+                    if let LamExpr::App { func, oprd, .. } = tgt.extract() {
+                        left = left
+                            .cons( (oprd.clone(), parents.cons(
+                                    PassInfo::Oprd { func: func.clone() })) )
+                            .cons( (func.clone(), parents.cons(
+                                    PassInfo::Func { oprd: oprd.clone() })) );
                     }
                 }
             }
