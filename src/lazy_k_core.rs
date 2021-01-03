@@ -830,12 +830,16 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self) -> Option<Self> {
-        (*self).clone().change_once(ChNumEval::eval_cc_one)
+        println!("   start eval_cc");
+        let a = (*self).clone().change_once(ChNumEval::eval_cc_one);
+        println!("   end eval_cc");
+        a
     }
 
     fn change_once<F>(self, f: F) -> Option<Self>
             where F: Fn(PLamExpr) -> Option<PLamExpr> {
         let mut left = ConsList::empty().cons((self.0, ConsList::empty()));
+        println!("    start change_once");
         while ! left.is_empty() {
             let (tgt, parents) = left.head();
             left = left.tail();
@@ -848,7 +852,11 @@ impl ChNumEval {
                             PassInfo::Oprd { func } => func * ans,
                         }
                     }
-                    return Some(ChNumEval(ans));
+                    println!("    end change_once Some");
+                    let ret = Some(ChNumEval(ans));
+                    println!("    end change_once Some enveloped");
+                    //return Some(ChNumEval(ans));
+                    return ret;
                 }
                 None => {
                     match tgt.extract() {
@@ -865,6 +873,7 @@ impl ChNumEval {
                 }
             }
         }
+        println!("    end change_once None");
         None
     }
 
