@@ -1,48 +1,42 @@
 use std::rc::Rc;
 
-enum RConsList<T> {
-    Cons { head: T, tail: ConsList<T> },
+pub enum ConsList<T> {
+    Cons { head: T, tail: Rc<ConsList<T>> },
     Nil,
 }
 
-pub struct ConsList<T>(Rc<RConsList<T>>);
-
 impl<T: Clone> ConsList<T> {
 
-    fn new(rcl: RConsList<T>) -> Self {
-        ConsList(Rc::new(rcl))
-    }
-
     pub fn empty() -> Self {
-        ConsList(Rc::new(RConsList::Nil))
+        ConsList::Nil
     }
 
     pub fn is_empty(&self) -> bool {
-        match &*self.0 {
-            RConsList::Nil => true,
+        match self {
+            ConsList::Nil => true,
             _ => false,
         }
     }
 
     pub fn head(&self) -> T {
-        match &*self.0 {
-            RConsList::Cons { head, .. } => head.clone(),
-            RConsList::Nil => panic!("ConsList::head"),
+        match &self {
+            ConsList::Cons { head, .. } => head.clone(),
+            ConsList::Nil => panic!("ConsList::head"),
         }
     }
 
     pub fn tail(&self) -> ConsList<T> {
-        match &*self.0 {
-            RConsList::Cons { tail, .. } => ConsList(tail.0.clone()),
-            RConsList::Nil => ConsList(self.0.clone()),
+        match &self {
+            ConsList::Cons { tail, .. } => (**tail).clone(),
+            ConsList::Nil => ConsList::Nil,
         }
     }
 
     pub fn cons(&self, head: T) -> Self {
-        Self::new(RConsList::Cons {
+        ConsList::Cons {
             head: head,
-            tail: ConsList(self.0.clone())
-        })
+            tail: Rc::new(self.clone()),
+        }
     }
 
     pub fn to_vec(self) -> Vec<T> {
@@ -61,9 +55,13 @@ impl<T: Clone> ConsList<T> {
 
 }
 
-impl<T> Clone for ConsList<T> {
+impl<T: Clone> Clone for ConsList<T> {
     fn clone(&self) -> Self {
-        ConsList( self.0.clone() )
+        match self {
+            ConsList::Cons{ head, tail } =>
+                ConsList::Cons{ head: head.clone(), tail: Rc::clone(tail) },
+            ConsList::Nil => ConsList::Nil,
+        }
     }
 }
 
