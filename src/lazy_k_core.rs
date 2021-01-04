@@ -688,6 +688,7 @@ pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
         where F: Fn(&T) -> Option<T>, G: Fn(&T) -> Option<String> {
     let mut a = init;
     for c in RevIter::new(cnt_max, 1) {
+        println!("c = {}", c);
         match apply( &a ) {
             None     => return Ok((a, c)),
             Some(a1) => match check( &a1 ) {
@@ -838,9 +839,11 @@ impl ChNumEval {
 
     fn change_once<F>(self, f: F) -> Option<Self>
             where F: Fn(PLamExpr) -> Option<PLamExpr> {
+        let mut c = 0;
         let mut left = ConsList::empty().cons((&self.0, ConsList::empty()));
         println!("    start change_once");
         while ! left.is_empty() {
+            c += 1;
             let (tgt, parents): (&PLamExpr, ConsList<PassInfo>) = left.head();
             left = left.tail();
             match f(tgt.clone()) {
@@ -859,7 +862,7 @@ impl ChNumEval {
                         }
                     }
                     let ret = Some(ChNumEval(ans));
-                    println!("    end change_once Some enveloped");
+                    println!("    end change_once Some enveloped : {}", c);
                     return ret;
                     //return Some(ChNumEval(ans));
                 }
