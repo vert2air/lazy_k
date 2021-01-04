@@ -853,10 +853,15 @@ impl ChNumEval {
                         }
                     }
                     println!("    end change_once Some");
+                    for (_o, l) in left.iter() {
+                        for _e in l.iter() {
+                            ;
+                        }
+                    }
                     let ret = Some(ChNumEval(ans));
                     println!("    end change_once Some enveloped");
-                    //return Some(ChNumEval(ans));
                     return ret;
+                    //return Some(ChNumEval(ans));
                 }
                 None => {
                     if let LamExpr::App { func, oprd, .. } = tgt.extract() {
