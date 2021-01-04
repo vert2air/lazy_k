@@ -838,18 +838,18 @@ impl ChNumEval {
 
     fn change_once<F>(self, f: F) -> Option<Self>
             where F: Fn(PLamExpr) -> Option<PLamExpr> {
-        let mut left = ConsList::empty().cons((self.0, ConsList::empty()));
+        let mut left = ConsList::empty().cons((&self.0, ConsList::empty()));
         println!("    start change_once");
         while ! left.is_empty() {
-            let (tgt, parents) = left.head();
+            let (tgt, parents): (&PLamExpr, ConsList<PassInfo>) = left.head();
             left = left.tail();
             match f(tgt.clone()) {
                 Some(a) => {
                     let mut ans = a;
                     for pi in parents.iter() {
                         ans = match pi {
-                            PassInfo::Func { oprd } => ans * oprd,
-                            PassInfo::Oprd { func } => func * ans,
+                            PassInfo::Func { oprd } => ans * oprd.clone(),
+                            PassInfo::Oprd { func } => func.clone() * ans,
                         }
                     }
                     println!("    end change_once Some");
@@ -861,10 +861,10 @@ impl ChNumEval {
                 None => {
                     if let LamExpr::App { func, oprd, .. } = tgt.extract() {
                         left = left
-                            .cons( (oprd.clone(), parents.cons(
-                                    PassInfo::Oprd { func: func.clone() })) )
-                            .cons( (func.clone(), parents.cons(
-                                    PassInfo::Func { oprd: oprd.clone() })) );
+                            .cons( (oprd, parents.cons(
+                                    PassInfo::Oprd { func: func })) )
+                            .cons( (func, parents.cons(
+                                    PassInfo::Func { oprd: oprd })) );
                     }
                 }
             }
@@ -873,7 +873,7 @@ impl ChNumEval {
         None
     }
 
-    pub fn eval_cc_one<>(a: PLamExpr) -> Option<PLamExpr> {
+    pub fn eval_cc_one(a: PLamExpr) -> Option<PLamExpr> {
         //println!("eval_cc_one start: {}", a.clone().to_unlam().unwrap());
         match &*a.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
@@ -931,9 +931,9 @@ impl ChNumEval {
 }
 
 #[derive(Clone)]
-enum PassInfo {
-    Func { oprd: PLamExpr },
-    Oprd { func: PLamExpr },
+enum PassInfo<'a> {
+    Func { oprd: &'a PLamExpr },
+    Oprd { func: &'a PLamExpr },
 }
 
 
