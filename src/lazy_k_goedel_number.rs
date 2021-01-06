@@ -19,6 +19,7 @@ pub fn our1() -> OurInt { One::one() }
 //pub fn our1() -> OurInt { 1 }
 
 use super::lazy_k_core::{PLamExpr, nm, LamExpr};
+use super::lazy_k_read::read_lazy_k;    // for test
 
 
 /// ```
@@ -378,3 +379,27 @@ fn test_mul_up_down() {
     assert_eq!( mul_up_down(&vec![     54, 9, 3]), vec![162, 81, 162] );
     assert_eq!( mul_up_down(&vec![405, 54, 9, 3]), vec![1215, 486, 486, 1215] );
 }
+
+#[test]
+fn test_read_n_to_unlam() {
+    fn bn(a: i32) -> OurInt {
+        match OurInt::try_from(a) {
+            Ok(a2) => a2,
+            _ => panic!("bn"),
+        }
+    }
+    fn check(n: &OurInt) {
+        let ul = n_to_unlam(n.clone()); // PLamExpr
+        let st = ul.to_unlam().unwrap();        // String
+        let cc = read_lazy_k(&st).unwrap();     // PLamExpr
+        let (_, n2) = lam_to_n(&cc);        // OurInt
+        println!("Goedel number: {} <=> {} <=> {}", n.clone(), st, n2.clone());
+        assert_eq!( n.clone(), n2 );
+    }
+    let mut n = bn(100);
+    for _ in 1..100 {
+        check(&n);
+        n *= bn(100);
+    }
+}
+
