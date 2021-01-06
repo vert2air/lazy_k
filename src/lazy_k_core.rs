@@ -2,7 +2,6 @@ use std::fmt;
 use std::ops::Mul;
 use std::rc::Rc;
 
-use super::cons_list;
 use super::cons_list::ConsList;
 
 #[derive(Eq, PartialEq)]
@@ -858,7 +857,6 @@ impl ChNumEval {
                     //println!("    end change_once Some");
                     for (_o, l) in left.iter() {
                         for _e in l.iter() {
-                            ;
                         }
                     }
                     let ret = Some(ChNumEval(ans));
