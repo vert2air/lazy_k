@@ -837,15 +837,15 @@ impl ChNumEval {
             where F: Fn(PLamExpr) -> Option<PLamExpr> {
         let mut left = ConsList::empty().cons((&self.0, ConsList::empty()));
         while ! left.is_empty() {
-            let (tgt, parents): (&PLamExpr, ConsList<PassInfo>) = left.head();
+            let (tgt, parents): (&PLamExpr, ConsList<PathInfo>) = left.head();
             left = left.tail();
             match f(tgt.clone()) {
                 Some(a) => {
                     let mut ans = a;
                     for pi in parents.iter() {
                         ans = match pi {
-                            PassInfo::Func { oprd } => ans * oprd.clone(),
-                            PassInfo::Oprd { func } => func.clone() * ans,
+                            PathInfo::Func { oprd } => ans * oprd.clone(),
+                            PathInfo::Oprd { func } => func.clone() * ans,
                         }
                     }
                     for (_o, l) in left.iter() {
@@ -858,9 +858,9 @@ impl ChNumEval {
                     if let LamExpr::App { func, oprd, .. } = tgt.extract() {
                         left = left
                             .cons( (oprd, parents.cons(
-                                    PassInfo::Oprd { func: func })) )
+                                    PathInfo::Oprd { func: func })) )
                             .cons( (func, parents.cons(
-                                    PassInfo::Func { oprd: oprd })) );
+                                    PathInfo::Func { oprd: oprd })) );
                     }
                 }
             }
@@ -925,7 +925,7 @@ impl ChNumEval {
 }
 
 #[derive(Clone)]
-enum PassInfo<'a> {
+enum PathInfo<'a> {
     Func { oprd: &'a PLamExpr },
     Oprd { func: &'a PLamExpr },
 }
