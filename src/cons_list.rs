@@ -32,7 +32,7 @@ impl<T: Clone> ConsList<T> {
         }
     }
 
-    pub fn cons(&self, head: T) -> Self {
+    pub fn cons(self, head: T) -> Self {
         ConsList::Cons {
             head: head,
             tail: Rc::new(self.clone()),

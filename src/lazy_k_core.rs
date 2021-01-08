@@ -3,6 +3,7 @@ use std::ops::Mul;
 use std::rc::Rc;
 
 use super::cons_list::ConsList;
+use super::traverse_tree::BinaryTree;
 
 #[derive(Eq, PartialEq)]
 pub enum LamExpr {
@@ -830,45 +831,14 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self) -> Option<Self> {
-        (*self).clone().change_once(ChNumEval::eval_cc_one)
-    }
-
-    fn change_once<F>(self, f: F) -> Option<Self>
-            where F: Fn(PLamExpr) -> Option<PLamExpr> {
-        let mut left = ConsList::empty().cons((&self.0, ConsList::empty()));
-        while ! left.is_empty() {
-            let (tgt, parents): (&PLamExpr, ConsList<PathInfo>) = left.head();
-            left = left.tail();
-            match f(tgt.clone()) {
-                Some(a) => {
-                    let mut ans = a;
-                    for pi in parents.iter() {
-                        ans = match pi {
-                            PathInfo::Func { oprd } => ans * oprd.clone(),
-                            PathInfo::Oprd { func } => func.clone() * ans,
-                        }
-                    }
-                    for (_o, l) in left.iter() {
-                        for _e in l.iter() {
-                        }
-                    }
-                    return Some(ChNumEval(ans));
-                }
-                None => {
-                    if let LamExpr::App { func, oprd, .. } = tgt.extract() {
-                        left = left
-                            .cons( (oprd, parents.cons(
-                                    PathInfo::Oprd { func: func })) )
-                            .cons( (func, parents.cons(
-                                    PathInfo::Func { oprd: oprd })) );
-                    }
-                }
-            }
+        let a = self.0.clone().apply_first(ChNumEval::eval_cc_one);
+        match a {
+            Some(a) => Some(ChNumEval(a)),
+            None => None,
         }
-        None
     }
 
-    pub fn eval_cc_one(a: PLamExpr) -> Option<PLamExpr> {
+    fn eval_cc_one(a: PLamExpr) -> Option<PLamExpr> {
         match &*a.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
