@@ -10,6 +10,14 @@ pub enum BTPathInfo<A: Clone, T: Clone + ?Sized> {
     R { a: A, l: Option<T> },
 }
 
+#[derive(Clone)]
+enum FoldStack<T> {
+    Pre(T),
+    Mid(T),
+    Post(T),
+    Child(T),
+}
+
 pub trait BinaryTree<A> where A: Clone, Self: Clone {
     fn disassemble(self) -> (A, Option<Self>, Option<Self>);
     fn make_node(self, pi: BTPathInfo<A, Self>) -> Self;
@@ -57,6 +65,34 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
         None
     }
 
+    fn fold<R, F, G, H>(self, ini: R, pre: F, mid: G, post: H) -> R
+                where F: Fn(R, Self, u8) -> R, G: Fn(R, Self, u16) -> R,
+                                                H: Fn(R, Self, u32) -> R {
+        let mut sum = ini;
+        let mut task = ConsList::empty().cons(FoldStack::Child(self));
+        while ! task.is_empty() {
+            let tgt = task.head();
+            task = task.tail();
+            match tgt {
+                FoldStack::Pre(n)  => sum = pre(sum, n, 0),
+                FoldStack::Mid(n)  => sum = mid(sum, n, 0),
+                FoldStack::Post(n) => sum = post(sum, n, 0),
+                FoldStack::Child(c) => {
+                    let (_, left, right) = c.clone().disassemble();
+                    task = task.cons(FoldStack::Post(c.clone()));
+                    if let Some(r) = right {
+                        task = task.cons(FoldStack::Child(r));
+                    }
+                    task = task.cons(FoldStack::Mid(c.clone()));
+                    if let Some(l) = left {
+                        task = task.cons(FoldStack::Child(l));
+                    }
+                    task = task.cons(FoldStack::Pre(c));
+                }
+            }
+        }
+        sum
+    }
 }
 
 impl BinaryTree<()> for PLamExpr {

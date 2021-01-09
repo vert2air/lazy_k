@@ -241,25 +241,21 @@ impl PLamExpr {
     /// test_eq( ( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
     /// ```
     pub fn to_unlam(&self) -> Result<String, String> {
-        match &*self.0 {
-            LamExpr::Nm { name } if **name == "I" => Ok("i".to_string()),
-            LamExpr::Nm { name } if **name == "K" => Ok("k".to_string()),
-            LamExpr::Nm { name } if **name == "S" => Ok("s".to_string()),
-            LamExpr::App { func, oprd, .. } => {
-                match func.to_unlam() {
-                    Ok(fc) =>
-                        match oprd.to_unlam() {
-                            Ok(op) => Ok(format!("`{}{}", fc, op)),
-                            Err(e) => Err(e),
-                        },
-                    Err(e) => Err(e),
-                }
-            },
-            LamExpr::Nm { name } =>
-                Err(format!("to_unlam: Unknown Combinator Name: {}", name)),
-            _ => Err(format!("to_unlam: Non-SKI LamExpr: {:?}", self))
-        }
+        Ok(self.clone().fold("".to_string(),
+                    PLamExpr::to_unlam_pre, PLamExpr::id_1, PLamExpr::id_2))
     }
+    fn to_unlam_pre(sum: String, n: PLamExpr, _dummy: u8) -> String {
+        let sum = match &*n.0 {
+            LamExpr::Nm { name } if **name == "I" => format!("{}i", sum),
+            LamExpr::Nm { name } if **name == "K" => format!("{}k", sum),
+            LamExpr::Nm { name } if **name == "S" => format!("{}s", sum),
+            LamExpr::App {..} => format!("{}`", sum),
+            x => format!("{}<Unexpected:{:?}>", sum, x),
+        };
+        sum
+    }
+    fn id_1(sum: String, _: PLamExpr, _dummy: u16) -> String { sum }
+    fn id_2(sum: String, _: PLamExpr, _dummy: u32) -> String { sum }
 
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
