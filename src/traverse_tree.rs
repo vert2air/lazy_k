@@ -32,8 +32,9 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
     fn make_node(self, pi: BTPathInfo<A, Self>) -> Self;
 
     fn map<F, G, H>(self, pre: F, mid: G, post: H) -> Self
-                where F: Fn(Self, u8) -> Self, G: Fn(Self, u16) -> Self,
-                                                H: Fn(Self, u32) -> Self {
+                                    where F: Fn(Self, u8) -> Option<Self>,
+                                        G: Fn(Self, u16) -> Option<Self>,
+                                        H: Fn(Self, u32) -> Option<Self> {
         let mut stack = ConsList::empty();
         stack = stack.cons(MapStack::Pre { root: self });
         while ! stack.is_empty() {
@@ -41,46 +42,64 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
             stack = stack.tail();
             match h {
                 MapStack::Pre { root } => {
-                    let t1 = pre(root, 0);
-                    stack = BinaryTree::update_root(stack, Some(t1.clone()));
-                    let (_a, ol, _or) = t1.clone().disassemble();
+                    let rt = match pre(root.clone(), 0) {
+                        Some(root2_some) => {
+                            stack = BinaryTree::update_root(stack,
+                                                    Some(root2_some.clone()));
+                            root2_some
+                        }
+                        None => root,
+                    };
+                    let (_a, ol, _or) = rt.clone().disassemble();
                     stack = match ol.clone() {
                         Some(l) =>
-                            stack.cons(MapStack::GoL { root: t1, left: ol })
+                            stack.cons(MapStack::GoL { root: rt, left: ol })
                                 .cons(MapStack::Pre { root: l }),
                         None =>
-                            stack.cons(MapStack::Mid { root: t1, left: ol }),
+                            stack.cons(MapStack::Mid { root: rt, left: ol }),
                     }
                 }
                 MapStack::Mid { root, left } => {
-                    let t1 = mid(root, 0);
-                    stack = BinaryTree::update_root(stack, Some(t1.clone()));
-                    let (_a, ol, or) = t1.clone().disassemble();
+                    let rt = match mid(root.clone(), 0) {
+                        Some(root2_some) => {
+                            stack = BinaryTree::update_root(stack,
+                                                    Some(root2_some.clone()));
+                            root2_some
+                        }
+                        None => root,
+                    };
+                    let (_a, ol, or) = rt.clone().disassemble();
                     stack = match or.clone() {
                         Some(r) =>
-                            stack.cons(MapStack::GoR { root: t1, left: ol,
+                            stack.cons(MapStack::GoR { root: rt, left: ol,
                                                                 right: or })
                                 .cons(MapStack::Pre { root: r }),
                         None =>
-                            stack.cons(MapStack::Post { root: t1, left: ol,
+                            stack.cons(MapStack::Post { root: rt, left: ol,
                                                                 right: or }),
                     }
                 }
                 MapStack::Post { root, left, right } => {
-                    let t1 = post(root, 0);
-                    stack = BinaryTree::update_root(stack, Some(t1.clone()));
+                    let rt = match post(root.clone(), 0) {
+                        Some(root2_some) => {
+                            stack = BinaryTree::update_root(stack,
+                                                    Some(root2_some.clone()));
+                            root2_some
+                        }
+                        None => root,
+                    };
                     if stack.is_empty() {
-                        return t1;
+                        return rt;
                     } else {
                         let h = stack.head();
                         stack = stack.tail();
                         stack = match h {
                             MapStack::GoL { root, .. } =>
                                 stack.cons(MapStack::Mid { root: root,
-                                                left: Some(t1) }),
+                                                left: Some(rt) }),
                             MapStack::GoR { root, left, .. } =>
                                 stack.cons(MapStack::Post { root: root,
-                                                left: left, right: Some(t1) }),
+                                                left: left, right: Some(rt) }),
                             _ => panic!("BinaryTree::map :Neither GoL nor GoR"),
                         }
                     }
