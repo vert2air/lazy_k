@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-pub enum ConsList<T> {
+pub enum ConsList<T: Sized> {
     Cons { head: T, tail: Rc<ConsList<T>> },
     Nil,
 }
@@ -31,6 +31,20 @@ impl<T: Clone> ConsList<T> {
             ConsList::Nil => ConsList::Nil,
         }
     }
+/*
+    pub fn push(&mut self, e: T) {
+        *self = self.cons(e);
+    }
+
+    pub fn pop(&mut self) -> T {
+        match self {
+            ConsList::Cons { head, tail } => {
+                self = tail;
+                head.clone()
+            }
+            ConsList::Nil => panic!("ConsList::pop"),
+        }
+    }*/
 
     pub fn cons(self, head: T) -> Self {
         ConsList::Cons {
