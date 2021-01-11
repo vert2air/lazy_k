@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub enum ConsList<T: Sized> {
     Cons { head: T, tail: Rc<ConsList<T>> },
     Nil,

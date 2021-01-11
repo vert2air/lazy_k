@@ -4,13 +4,13 @@ use super::cons_list::ConsList;
 /// a: Common for both L and R. Attributes of the Node.
 /// r: Right child when down to Left child.
 /// l: Left child when down to Right child.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum BTPathInfo<A: Clone, T: Clone + Sized> {
     L { a: A, r: Option<T> },
     R { a: A, l: Option<T> },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum FoldStack<T> {
     Pre(T),
     Mid(T),
@@ -18,75 +18,89 @@ enum FoldStack<T> {
     Child(T),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum MapStack<T: Clone + Sized> {
     Pre { root: T },
-    GoL { root: T, left: Option<T> },
-    Mid { root: T, left: Option<T> },
-    GoR { root: T, left: Option<T>, right: Option<T> },
-    Post { root: T, left: Option<T>, right: Option<T> },
+    GoL { root: T }, //, left: Option<T> },
+    Mid { root: T }, //left: Option<T> },
+    GoR { root: T },  //left: Option<T>, right: Option<T> },
+    Post { root: T }, //left: Option<T>, right: Option<T> },
 }
 
 pub trait BinaryTree<A> where A: Clone, Self: Clone {
     fn disassemble(self) -> (A, Option<Self>, Option<Self>);
+    fn replace_child(self, l: Option<Self>, r: Option<Self>) -> Self;
     fn make_node(self, pi: BTPathInfo<A, Self>) -> Self;
 
-    fn map<F, G, H>(self, pre: F, mid: G, post: H) -> Self
-                                    where F: Fn(Self, u8) -> Option<Self>,
-                                        G: Fn(Self, u16) -> Option<Self>,
-                                        H: Fn(Self, u32) -> Option<Self> {
+    fn map<F, G, H>(self, mut pre: F, mut mid: G, mut post: H) -> Self
+                                where F: FnMut(Self, u8) -> Option<Self>,
+                                        G: FnMut(Self, u16) -> Option<Self>,
+                                        H: FnMut(Self, u32) -> Option<Self> {
         let mut stack = ConsList::empty();
         stack = stack.cons(MapStack::Pre { root: self });
         while ! stack.is_empty() {
             let h = stack.head();
+            //println!("map::head: {:?}", h);
             stack = stack.tail();
             match h {
                 MapStack::Pre { root } => {
                     let rt = match pre(root.clone(), 0) {
                         Some(root2_some) => {
-                            stack = BinaryTree::update_root(stack,
-                                                    Some(root2_some.clone()));
+                            println!("pre : return Some");
                             root2_some
                         }
-                        None => root,
+                        None => {
+                            println!("pre : return None");
+                        root
+                        }
                     };
                     let (_a, ol, _or) = rt.clone().disassemble();
                     stack = match ol.clone() {
-                        Some(l) =>
-                            stack.cons(MapStack::GoL { root: rt, left: ol })
-                                .cons(MapStack::Pre { root: l }),
-                        None =>
-                            stack.cons(MapStack::Mid { root: rt, left: ol }),
+                        Some(l) => {
+                            println!("pre : stack 2");
+                            stack.cons(MapStack::GoL { root: rt })
+                                .cons(MapStack::Pre { root: l })
+                                }
+                        None => {
+                            println!("pre : stack 1");
+                            stack.cons(MapStack::Mid { root: rt })
+                                }
                     }
                 }
-                MapStack::Mid { root, left } => {
+                MapStack::Mid { root } => {
                     let rt = match mid(root.clone(), 0) {
                         Some(root2_some) => {
-                            stack = BinaryTree::update_root(stack,
-                                                    Some(root2_some.clone()));
+                            println!("mid : return Some");
                             root2_some
                         }
-                        None => root,
+                        None => {
+                            println!("mid : return None");
+                        root
+                        }
                     };
-                    let (_a, ol, or) = rt.clone().disassemble();
+                    let (_a, _ol, or) = rt.clone().disassemble();
                     stack = match or.clone() {
-                        Some(r) =>
-                            stack.cons(MapStack::GoR { root: rt, left: ol,
-                                                                right: or })
-                                .cons(MapStack::Pre { root: r }),
-                        None =>
-                            stack.cons(MapStack::Post { root: rt, left: ol,
-                                                                right: or }),
+                        Some(r) => {
+                            println!("mid : stack 2");
+                            stack.cons(MapStack::GoR { root: rt })
+                                .cons(MapStack::Pre { root: r })
+                        }
+                        None => {
+                            println!("mid : stack 1");
+                            stack.cons(MapStack::Post { root: rt })
+                        }
                     }
                 }
-                MapStack::Post { root, left, right } => {
+                MapStack::Post { root } => {
                     let rt = match post(root.clone(), 0) {
                         Some(root2_some) => {
-                            stack = BinaryTree::update_root(stack,
-                                                    Some(root2_some.clone()));
+                            println!("post : return Some");
                             root2_some
                         }
-                        None => root,
+                        None => {
+                            println!("post : return None");
+                        root
+                        }
                     };
                     if stack.is_empty() {
                         return rt;
@@ -94,12 +108,16 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
                         let h = stack.head();
                         stack = stack.tail();
                         stack = match h {
-                            MapStack::GoL { root, .. } =>
-                                stack.cons(MapStack::Mid { root: root,
-                                                left: Some(rt) }),
-                            MapStack::GoR { root, left, .. } =>
-                                stack.cons(MapStack::Post { root: root,
-                                                left: left, right: Some(rt) }),
+                            MapStack::GoL { root } => {
+                                println!("post : red GoL");
+                                let rt2 = root.replace_child(Some(rt), None);
+                                stack.cons(MapStack::Mid { root: rt2 })
+                            }
+                            MapStack::GoR { root } => {
+                                println!("post : red GoR");
+                                let rt2 = root.replace_child(None, Some(rt));
+                                stack.cons(MapStack::Post { root: rt2 })
+                            }
                             _ => panic!("BinaryTree::map :Neither GoL nor GoR"),
                         }
                     }
@@ -109,7 +127,7 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
         }
         panic!("BinaryTree::map : unexpected empty stack")
     }
-
+/*
     /// This is a private function to be designed to use from BinaryTree::map()
     /// only. Don't use this in other case.
     fn update_root(stack: ConsList<MapStack<Self>>, n: Option<Self>) 
@@ -118,16 +136,16 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
             let h = stack.head();
             let st = stack.tail();
             match h {
-                MapStack::GoL { root, left } =>
-                    st.cons( MapStack::GoL { root, left: n } ),
-                MapStack::GoR { root, left, right } =>
-                    st.cons( MapStack::GoR { root, left, right: n } ),
+                MapStack::GoL { root: rt } =>
+                    st.cons( MapStack::GoL { root: rt, left: n } ),
+                MapStack::GoR { root: rt, left: l, .. } =>
+                    st.cons( MapStack::GoR { root: rt, left: l, right: n } ),
                 _ => panic!("BinaryTree::update_root"),
             }
         } else {
             stack
         }
-    }
+    }*/
 
     /// Traverse the binary tree in Preorder,
     /// and search the node at which function f returns Some(_) value.
@@ -215,6 +233,37 @@ impl BinaryTree<NodeType> for PLamExpr {
                 (NodeType::Lam, Some(lexp.clone()), None),
             _ => (NodeType::Leaf, None, None),
         }
+    }
+    fn replace_child(self, l: Option<Self>, r: Option<Self>) -> Self {
+        match (l, r) {
+            (Some(sl), None) => {
+                if let LamExpr::App { oprd, .. } = self.extract() {
+                    PLamExpr::new(&LamExpr::App { size: 1 + sl.len() + oprd.len(),
+                                            func: sl, oprd: oprd.clone() })
+                } else {
+                    panic!("BinaryTree::PLamExpr::replace_child")
+                }
+            }
+            (None, Some(sr)) => {
+                if let LamExpr::App { func, .. } = self.extract() {
+                    PLamExpr::new(&LamExpr::App { size: 1 + func.len() + sr.len(),
+                                            func: func.clone(), oprd: sr })
+                } else {
+                    panic!("BinaryTree::PLamExpr::replace_child")
+                }
+            }
+            _ => panic!("BinaryTree::PLamExpr::replace_child"),
+        }
+        /*
+        match (self.extract(), l, r) {
+            (LamExpr::App { oprd, .. }, Some(sl), None) =>
+                PLamExpr::new(&LamExpr::App { size: 1 + sl.len() + oprd.len(),
+                                            func: sl, oprd: oprd.clone() }),
+            (LamExpr::App { func, .. }, None, Some(sr)) =>
+                PLamExpr::new(&LamExpr::App { size: 1 + func.len() + sr.len(),
+                                            func: func.clone(), oprd: sr }),
+            _ => panic!("BinaryTree::PLamExpr::replace_child"),
+        }*/
     }
     fn make_node(self, pi: BTPathInfo<NodeType, Self>) -> Self {
         match pi {

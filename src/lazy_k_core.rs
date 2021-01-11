@@ -583,10 +583,10 @@ impl PLamExpr {
     /// let chnum = PLamExpr::abst_elim(&la(la( (  v(2) * v(1)   ) ) ));
     /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(5), Ok((1, 3)) );
     /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
-    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(10), Ok((2, 2)) );
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(6), Ok((2, 2)) );
     /// let chnum = PLamExpr::abst_elim(&la(la( ( v(2) * ( v(2) * v(1) ) ) ) ));
-    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(5),
-    ///                 Err("Time Limit : c = 0 / 5 : size = 7".to_string()) );
+    /// assert_eq!( chnum.map_or(i(), |x| x).get_num_n(2),
+    ///                 Err("Time Limit : c = 0 / 2 : size = 9".to_string()) );
     /// ```
     pub fn get_num_n(&self, lmt: u32) -> Result<(u32, u32), String> {
         match apply_fully(lmt, ChNumEval::to_ch_num_eval(self.clone()),
@@ -822,6 +822,63 @@ impl ChNumEval {
     }
 
     pub fn eval_cc(&self) -> Option<Self> {
+        let mut not_do_beta_reduction_yet = true;
+        let pre = move |a: PLamExpr, _dummy: u8| -> Option<PLamExpr> {
+
+            match &*a.0 {
+                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
+                    LamExpr::Nm { name } if **name == "I" => {
+                            println!("I");
+                    Some(o1.clone())
+                    }
+                    LamExpr::Nm { name } if **name == "plus1" => match &*o1.0 {
+                        LamExpr::V { idx } => {
+                            println!("V({})", *idx + 1);
+                        Some( v(*idx + 1) )
+                        }
+                        _ => None,
+                    }
+                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
+                        LamExpr::Nm { name } if **name == "K" =>
+                            // K o2 o1 ==beta=> o2
+                            Some(o2.clone()),
+                        LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
+                            LamExpr::Nm { name } if **name == "S" => match &*o3.0 {
+                                LamExpr::Nm { name } if **name == "K" =>
+                                    // S K o2 o1 ==beta=> o1
+                                    Some(o1.clone()),
+                                _ => {
+                                    // S o3 o2 o1
+                                    if not_do_beta_reduction_yet {
+                                        not_do_beta_reduction_yet = false;
+                                        Some(o3.clone() * o1.clone()
+                                                * (o2.clone() * o1.clone()) )
+                                    } else {
+                                        None
+                                    }
+                                }
+                            }
+                            _ => None,
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                },
+                _ => None,
+            }
+
+        };
+        let new = self.0.clone().map(pre, |_, _| None, |_, _| None);
+        if new == self.0 {
+            None
+        } else {
+            Some(ChNumEval(new))
+        }
+    }
+
+
+/*
+    pub fn eval_cc(&self) -> Option<Self> {
         let a = self.0.clone().apply_first(ChNumEval::eval_cc_one);
         match a {
             Some(a) => Some(ChNumEval(a)),
@@ -850,7 +907,7 @@ impl ChNumEval {
             },
             _ => None,
         }
-    }
+    }*/
 
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
