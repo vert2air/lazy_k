@@ -370,17 +370,19 @@ impl PLamExpr {
     ///             Some( la(v(1)) )
     /// );
     /// ```
+
     pub fn beta_red(org: &Self) -> Option<Self> {
-        match &*org.0 {
-            LamExpr::L { lexp, ..} => ap(la, Self::beta_red(lexp)),
-            LamExpr::App { func, oprd, .. } =>
-                match &*func.0 {
-                    LamExpr::L { lexp, ..  } =>
-                        Some(comple(|x| { x.subst(1, oprd)}, lexp)),
-                    _ => Self::lor(|x| Self::beta_red(x), func, oprd),
-                },
-            _ => None,
-        }
+        org.clone().apply_first(|x: Self| -> Option<Self> {
+            match &*x.0 {
+                LamExpr::App { func, oprd, .. } =>
+                    match &*func.0 {
+                        LamExpr::L { lexp, ..  } =>
+                            Some(comple(|x| { x.subst(1, oprd)}, lexp)),
+                        _ => None,
+                    },
+                _ => None,
+            }
+        })
     }
 
     fn subst(&self, thr: u32, e: &PLamExpr) -> Option<PLamExpr> {
@@ -440,15 +442,6 @@ impl PLamExpr {
                 _ => None,
             }
         })
-    }
-
-    // leftmost-outermost reduction
-    fn lor<F>(red: F, func: &Self, oprd: &Self) -> Option<Self>
-            where F: Fn(&Self) -> Option<Self> {
-        match red(func) {
-            Some(f_r) => Some(f_r * oprd.clone()),
-            None => ap(|x| { func.clone() * (&x).clone() }, red(oprd)),
-        }
     }
 
     // Abstruction Elimination

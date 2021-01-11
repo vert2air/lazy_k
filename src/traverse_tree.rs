@@ -1,4 +1,4 @@
-use super::lazy_k_core::{LamExpr, PLamExpr};
+use super::lazy_k_core::{LamExpr, PLamExpr, la};
 use super::cons_list::ConsList;
 
 /// a: Common for both L and R. Attributes of the Node.
@@ -202,19 +202,28 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone {
     }
 }
 
-impl BinaryTree<()> for PLamExpr {
+#[derive(Clone, Eq, PartialEq)]
+pub enum NodeType { App, Lam, Leaf }
 
-    fn disassemble(self) -> ((), Option<Self>, Option<Self>) {
+impl BinaryTree<NodeType> for PLamExpr {
+
+    fn disassemble(self) -> (NodeType, Option<Self>, Option<Self>) {
         match self.extract() {
             LamExpr::App { func, oprd, .. } =>
-                ((), Some(func.clone()), Some(oprd.clone())),
-            _ => ((), None, None),
+                (NodeType::App, Some(func.clone()), Some(oprd.clone())),
+            LamExpr::L { lexp, .. } =>
+                (NodeType::Lam, Some(lexp.clone()), None),
+            _ => (NodeType::Leaf, None, None),
         }
     }
-    fn make_node(self, pi: BTPathInfo<(), Self>) -> Self {
+    fn make_node(self, pi: BTPathInfo<NodeType, Self>) -> Self {
         match pi {
-            BTPathInfo::L { r: oprd, .. } => self.clone() * oprd.unwrap(),
-            BTPathInfo::R { l: func, .. } => func.unwrap() * self.clone(),
+            BTPathInfo::L { a: nt, r: oprd, .. } => match nt {
+                NodeType::App => self.clone() * oprd.unwrap(),
+                NodeType::Lam => la(self),
+                _ => panic!("NodeType::make_node"),
+            }
+            BTPathInfo::R { a: _, l: func, .. } => func.unwrap() * self.clone(),
         }
     }
 
