@@ -824,18 +824,11 @@ impl ChNumEval {
     pub fn eval_cc(&self) -> Option<Self> {
         let mut not_do_beta_reduction_yet = true;
         let pre = move |a: PLamExpr, _dummy: u8| -> Option<PLamExpr> {
-
             match &*a.0 {
                 LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
-                    LamExpr::Nm { name } if **name == "I" => {
-                            println!("I");
-                    Some(o1.clone())
-                    }
+                    LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
                     LamExpr::Nm { name } if **name == "plus1" => match &*o1.0 {
-                        LamExpr::V { idx } => {
-                            println!("V({})", *idx + 1);
-                        Some( v(*idx + 1) )
-                        }
+                        LamExpr::V { idx } => Some( v(*idx + 1) ),
                         _ => None,
                     }
                     LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
@@ -866,7 +859,6 @@ impl ChNumEval {
                 },
                 _ => None,
             }
-
         };
         let new = self.0.clone().map(pre, |_, _| None, |_, _| None);
         if new == self.0 {
@@ -875,39 +867,6 @@ impl ChNumEval {
             Some(ChNumEval(new))
         }
     }
-
-
-/*
-    pub fn eval_cc(&self) -> Option<Self> {
-        let a = self.0.clone().apply_first(ChNumEval::eval_cc_one);
-        match a {
-            Some(a) => Some(ChNumEval(a)),
-            None => None,
-        }
-    }
-
-    fn eval_cc_one(a: PLamExpr) -> Option<PLamExpr> {
-        match &*a.0 {
-            LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
-                LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
-                LamExpr::Nm { name } if **name == "plus1" => match &*o1.0 {
-                    LamExpr::V { idx } => Some( v(*idx + 1) ),
-                    _ => None,
-                }
-                LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
-                    LamExpr::Nm { name } if **name == "K" => Some(o2.clone()),
-                    LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
-                        LamExpr::Nm { name } if **name == "S" =>
-                            Some(o3.clone() * o1.clone() * (o2.clone() * o1.clone()) ),
-                        _ => None,
-                    }
-                    _ => None,
-                },
-                _ => None,
-            },
-            _ => None,
-        }
-    }*/
 
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
