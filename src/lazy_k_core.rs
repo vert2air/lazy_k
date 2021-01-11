@@ -419,6 +419,9 @@ impl PLamExpr {
     ///                 Some(s()) );
     /// ```
     pub fn beta_red_cc(org: &Self) -> Option<PLamExpr> {
+        org.clone().apply_first(|x| PLamExpr::beta_red_cc_one(&x))
+    }
+    fn beta_red_cc_one(org: &Self) -> Option<PLamExpr> {
         match &*org.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
                 LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
@@ -429,11 +432,11 @@ impl PLamExpr {
                         LamExpr::Nm { name } if **name == "S" =>
                             Some( (o3.clone() * o1.clone())
                                 * (o2.clone() * o1.clone()) ),
-                        _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
+                        _ => None,
                     },
-                    _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
+                    _ => None,
                 },
-                _ => Self::lor(|x| Self::beta_red_cc(x), f1, o1),
+                _ => None,
             },
             LamExpr::Nm {..} => None,
             _ => None,
