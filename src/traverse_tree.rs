@@ -37,7 +37,7 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone + Debug {
 
     fn map_preorder<F>(self, mut pre: F) -> (Option<Self>, F)
                                 where F: FnMut(Self, u8) -> Option<Self> {
-        println!("preorder : {:?}", self);
+        //println!("preorder : {:?}", self);
         let mut changed = false;
         let mut rto = pre(self.clone(), 0);
         let mut rt = match rto {
@@ -46,10 +46,10 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone + Debug {
         };
         let (ol, _or) = rt.clone().get_children();
         if let Some(l) = ol {
-            println!("    preorder l : {:?}", l.clone());
+            //println!("    preorder l : {:?}", l.clone());
             let (l2, p) = l.map_preorder(pre);
             pre = p;
-            println!("    preorder l2 : {:?}", l2.clone());
+            //println!("    preorder l2 : {:?}", l2.clone());
             if let Some(l2s) = l2 {
                 changed = true;
                 rt = rt.replace_child(Some(l2s), None);
@@ -57,10 +57,10 @@ pub trait BinaryTree<A> where A: Clone, Self: Clone + Debug {
         }
         let (_ol, or) = rt.clone().get_children();
         if let Some(r) = or {
-            println!("    preorder r : {:?}", r.clone());
+            //println!("    preorder r : {:?}", r.clone());
             let (r2, p) = r.map_preorder(pre);
             pre = p;
-            println!("    preorder r2 : {:?}", r2.clone());
+            //println!("    preorder r2 : {:?}", r2.clone());
             if let Some(r2s) = r2 {
                 changed = true;
                 rt = rt.replace_child(None, Some(r2s));

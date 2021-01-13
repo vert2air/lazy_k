@@ -16,7 +16,7 @@ pub fn mining(f: OurInt, t: Option<OurInt>) {
                 println!("Found {} = {}", num, e.to_unlam().unwrap())
             }
             Err(msg) => {
-                println!("Error : {}: {}", e.to_unlam().unwrap(), msg)
+                //println!("Error : {}: {}", e.to_unlam().unwrap(), msg)
             }
         }
         pre = e;
