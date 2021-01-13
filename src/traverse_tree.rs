@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use super::lazy_k_core::{LamExpr, PLamExpr, la};
 use super::cons_list::ConsList;
 
@@ -27,10 +29,49 @@ pub enum MapStack<T: Clone + Sized> {
     Post { root: T },
 }
 
-pub trait BinaryTree<A> where A: Clone, Self: Clone {
+pub trait BinaryTree<A> where A: Clone, Self: Clone + Debug {
     fn disassemble(self) -> (A, Option<Self>, Option<Self>);
+    fn get_children(self) -> (Option<Self>, Option<Self>);
     fn replace_child(self, l: Option<Self>, r: Option<Self>) -> Self;
     fn make_node(self, pi: BTPathInfo<A, Self>) -> Self;
+
+    fn map_preorder<F>(self, mut pre: F) -> (Option<Self>, F)
+                                where F: FnMut(Self, u8) -> Option<Self> {
+        println!("preorder : {:?}", self);
+        let mut changed = false;
+        let mut rto = pre(self.clone(), 0);
+        let mut rt = match rto {
+            Some(rts) => { changed = true; rts }
+            _ => self,
+        };
+        let (ol, _or) = rt.clone().get_children();
+        if let Some(l) = ol {
+            println!("    preorder l : {:?}", l.clone());
+            let (l2, p) = l.map_preorder(pre);
+            pre = p;
+            println!("    preorder l2 : {:?}", l2.clone());
+            if let Some(l2s) = l2 {
+                changed = true;
+                rt = rt.replace_child(Some(l2s), None);
+            }
+        }
+        let (_ol, or) = rt.clone().get_children();
+        if let Some(r) = or {
+            println!("    preorder r : {:?}", r.clone());
+            let (r2, p) = r.map_preorder(pre);
+            pre = p;
+            println!("    preorder r2 : {:?}", r2.clone());
+            if let Some(r2s) = r2 {
+                changed = true;
+                rt = rt.replace_child(None, Some(r2s));
+            }
+        }
+        rto = match changed {
+            true => Some(rt),
+            false => None,
+        };
+        (rto, pre)
+    }
 
     fn map<F, G, H>(self, mut pre: F, mut mid: G, mut post: H) -> Self
                                 where F: FnMut(Self, u8) -> Option<Self>,
@@ -171,6 +212,15 @@ impl BinaryTree<NodeType> for PLamExpr {
             LamExpr::L { lexp, .. } =>
                 (NodeType::Lam, Some(lexp.clone()), None),
             _ => (NodeType::Leaf, None, None),
+        }
+    }
+    fn get_children(self) -> (Option<Self>, Option<Self>) {
+        match self.extract() {
+            LamExpr::App { func, oprd, .. } =>
+                (Some(func.clone()), Some(oprd.clone())),
+            LamExpr::L { lexp, .. } =>
+                (Some(lexp.clone()), None),
+            _ => (None, None),
         }
     }
     fn replace_child(self, l: Option<Self>, r: Option<Self>) -> Self {

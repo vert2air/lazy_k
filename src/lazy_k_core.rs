@@ -860,11 +860,10 @@ impl ChNumEval {
                 _ => None,
             }
         };
-        let new = self.0.clone().map(pre, |_, _| None, |_, _| None);
-        if new == self.0 {
-            None
-        } else {
-            Some(ChNumEval(new))
+        let (new, _) = self.0.clone().map_preorder(pre);
+        match new {
+            Some(rt) => Some(ChNumEval(rt)),
+            None => None,
         }
     }
 
