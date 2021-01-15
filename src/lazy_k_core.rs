@@ -229,14 +229,6 @@ impl PLamExpr {
         }
     }
 
-    /// ```
-    /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
-    /// fn test_eq(a: std::result::Result<String, String>, b: &str) {
-    ///     assert_eq!( a, Ok(b.to_string()));
-    /// }
-    ///
-    /// test_eq( ( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
-    /// ```
     pub fn to_unlam(&self) -> Result<String, String> {
         match &*self.0 {
             LamExpr::Nm { name } if **name == "I" => Ok("i".to_string()),
@@ -922,5 +914,20 @@ fn test_eval_cc() {
     let a = o.clone().eval_cc(true);
     let o = a.clone().map_or(o, |x| x);
     assert_eq!( o.0, v(1) ); 
+}
+
+[test]
+fn test_ChNumEval_to_unlam() {
+    fn test_eq(a: std::result::Result<String, String>, b: &str) {
+        assert_eq!( a, Ok(b.to_string()));
+    }
+    fn v(n: u32) -> PLamExpr {
+        PLamExpr::new(&LamExpr::V{ idx: n })
+    }
+    fn p1() -> PLamExpr {
+       PLamExpr::new(&LamExpr::Nm{ name: Rc::new("plus1".to_string()) })
+    }
+    test_eq( ChNumEval( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
+    test_eq( ChNumEval( i()*v(5)*( p1()*i() ) ).to_unlam(), "``i(5)`(++)i" );
 }
 
