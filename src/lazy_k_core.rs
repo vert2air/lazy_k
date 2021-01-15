@@ -229,6 +229,14 @@ impl PLamExpr {
         }
     }
 
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
+    /// fn test_eq(a: std::result::Result<String, String>, b: &str) {
+    ///     assert_eq!( a, Ok(b.to_string()));
+    /// }
+    ///
+    /// test_eq( ( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
+    /// ```
     pub fn to_unlam(&self) -> Result<String, String> {
         match &*self.0 {
             LamExpr::Nm { name } if **name == "I" => Ok("i".to_string()),
@@ -887,14 +895,6 @@ impl ChNumEval {
         }
     }
 
-    /// ```
-    /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
-    /// fn test_eq(a: std::result::Result<String, String>, b: &str) {
-    ///     assert_eq!( a, Ok(b.to_string()));
-    /// }
-    ///
-    /// test_eq( ( i()*k()*( s()*i() ) ).to_unlam(), "``ik`si" );
-    /// ```
     pub fn to_unlam(&self) -> Result<String, String> {
         match &*self.0.0 {
             LamExpr::Nm { name } if **name == "I" => Ok("i".to_string()),
