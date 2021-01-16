@@ -929,7 +929,7 @@ fn test_eval_cc() {
     assert_eq!( o.0, v(1) ); 
 }
 
-[test]
+#[test]
 fn test_ChNumEval_to_unlam() {
     fn test_eq(a: std::result::Result<String, String>, b: &str) {
         assert_eq!( a, Ok(b.to_string()));
