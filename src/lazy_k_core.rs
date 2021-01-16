@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use super::cons_list::ConsList;
 use super::traverse_tree::BinaryTree;
+use super::lazy_k_read::read_lazy_k;  // for test
 
 #[derive(Eq, PartialEq)]
 pub enum LamExpr {
@@ -927,6 +928,22 @@ fn test_eval_cc() {
     let a = o.clone().eval_cc();
     let o = a.clone().map_or(o, |x| x);
     assert_eq!( o.0, v(1) ); 
+
+    fn test(src: &str, dst: &str) {
+        let s = ChNumEval::new(read_lazy_k(src).unwrap());
+        let a = match s.eval_cc() {
+            Some(r) => r.to_unlam().unwrap(),
+            None => "None".to_string(),
+        };
+        assert_eq!(a, dst);
+    }
+    test("`ik", "k");
+    test("``ksi", "s");
+    test("```sskk",   "``sk`kk");
+    test("```sski",   "``si`ki");
+    test("`i`i```sski", "`i``si`ki");
+    test("`i ` ```sski ```sski", "```si`ki```sski"); // 2nd Sxyz isn't xlated.
+    test("`i ` ```sski ``ksi", "```si`kis"); // after 1st Sxyz
 }
 
 #[test]
