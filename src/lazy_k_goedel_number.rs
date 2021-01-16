@@ -397,7 +397,8 @@ fn test_read_n_to_unlam() {
         assert_eq!( n.clone(), n2 );
     }
     let mut n = bn(100);
-    for _ in 1..100 {
+    //for _ in 1..100 {
+    for _ in 1..5 {
         check(&n);
         n *= bn(100);
     }
