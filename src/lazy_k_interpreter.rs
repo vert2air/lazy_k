@@ -9,7 +9,10 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
         }
         let car = s() * i() * (k() * k());
         match (car * lk.clone()).get_num() {
-            Some(n) if n < 256 => v.push(n),
+            Some(n) if n < 256 => {
+                println!("calculating...: {}", n);
+                v.push(n);
+            }
             _ => break,
         }
         let cdr = s() * i() * (k() * (k() * i()));
