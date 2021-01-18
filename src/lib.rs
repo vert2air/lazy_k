@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use std::convert::TryFrom;
 
-use lazy_k_goedel_number::{OurInt, n_to_unlam, our0};
+use lazy_k_goedel_number::{OurInt, n_to_unlam};
 
 pub mod lazy_k_core;
 pub mod lazy_k_read;

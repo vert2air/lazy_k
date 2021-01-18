@@ -1,11 +1,7 @@
-use std::ops::Mul;
-use std::rc::Rc;
-
-use super::lazy_k_core;
 use super::lazy_k_core::{LamExpr, PLamExpr, i, k, s};
 use super::lazy_k_goedel_number;
 use super::lazy_k_goedel_number::{OurInt, our1};
-use super::lazy_k_read::read_lazy_k;
+use super::lazy_k_read::read_lazy_k;    // for test
 
 pub fn mine_ch_num(a: PLamExpr) -> Result<(u32, u32), String> {
     a.get_num_n(5_000)
