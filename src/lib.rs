@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
 use std::convert::TryFrom;
+use std::fs;
 
 use lazy_k_goedel_number::{OurInt, n_to_unlam};
 
@@ -30,6 +31,14 @@ pub fn unlam_to_gn(unlam: &str) {
         }
         Err(msg) => println!("read_lazy_k Error: {}", msg),
     }
+}
+
+pub fn interpreter_lazy_k(prog_fn: &str, arg_fn: &str) {
+    let prog_str = fs::read_to_string(prog_fn).unwrap();
+    let prog = lazy_k_read::read_lazy_k(&prog_str).unwrap();
+    let arg_str = fs::read_to_string(arg_fn).unwrap();
+    let arg = lazy_k_read::read_lazy_k(&arg_str).unwrap();
+    let _ = lazy_k_interpreter::exec_lazy_k(prog * arg);
 }
 
 pub fn mining_between(args: Vec<String>) {

@@ -10,6 +10,8 @@ fn main() {
                 lazy_k::gn_to_unlam(&args[2]),
             x if x == "unlam_to_gn" && args.len() == 3 =>
                 lazy_k::unlam_to_gn(&args[2]),
+            x if x == "lazy_k" && args.len() == 4 =>
+                lazy_k::interpreter_lazy_k(&args[2], &args[3]),
             x if x == "mining" =>
                 lazy_k::mining_between(args),
             _ => usage(),
@@ -23,6 +25,7 @@ fn usage() {
     println!("Usage:");
     println!("    gn_to_unlam <goedel_number>");
     println!("    unlam_to_gn <Unlambda_style_LazyK_expression>");
+    println!("    lazy_k <program> <argument>");
     println!("    mining <starting_goedel_number> [<end_goedel_number>]");
 }
 
