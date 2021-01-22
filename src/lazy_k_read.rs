@@ -16,6 +16,12 @@ use super::lazy_k_core::{PLamExpr, i, s, k, iota, jot};
 /// assert_eq!( read_lazy_k("11100"), Ok(jot("11100")) );
 /// assert_eq!( read_lazy_k("11100*i*ii"),
 ///                 Ok( jot("11100") * (iota()*(iota()*iota())) ) );
+/// assert_eq!( read_lazy_k("i"), read_lazy_k("I") );
+/// assert_eq!( read_lazy_k("`ks"), read_lazy_k("KS") );
+/// assert_eq!( read_lazy_k("```kski"), read_lazy_k("KSKI") );
+/// assert_eq!( read_lazy_k("`k`s`ki"), read_lazy_k("K(S(KI))") );
+/// assert_eq!( read_lazy_k("`k``ski"), read_lazy_k("K(SKI)") );
+/// assert_eq!( read_lazy_k("``ks`ki"), read_lazy_k("KS(KI)") );
 /// ```
 pub fn read_lazy_k(s: &str) -> Result<PLamExpr, String> {
     let mut src = s.chars();
