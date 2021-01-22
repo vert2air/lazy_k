@@ -35,7 +35,15 @@ fn multi_expr(h0: Option<char>, src: &mut str::Chars<'_>)
             Ok( (n, res) ) => {
                 sum.push(res);
                 h = n;
+                match h {
+                    Some(c) if c == ')' => break,
+                    _ => (),
+                }
             },
+            Err(msg) if msg == "RightParen" => {
+                h = Some(')');
+                break
+            }
             Err(msg) if msg == "EOF" => break,
             Err(msg)                 => return Err(msg),
         }
@@ -100,18 +108,21 @@ fn expr_tail(h0: Option<char>, src: &mut str::Chars<'_>)
             Some('s') => Ok( (None, s()) ),
             Some('`') => app(expr, src),
             Some('(') => match multi_expr(None, src) {
+                Err(msg) if msg == "RightParen" => {
+                    Ok( (None, i()) )  // epsilon()
+                }
                 Err(msg) => Err(msg),
-                Ok( (None, _e) ) => Err("lack of right paren".to_string()),
                 Ok( (Some(c), e) ) if c == ')' => Ok( (None, e) ),
-                Ok( (Some(_c), e) )            => loop {
+                Ok( (_, e) ) => loop {
                     match src.next() {
                         Some(')') => return Ok( (None, e) ),
                         Some(c) if is_lazy_k_char(c) => panic!("expr_tail:" ),
                         Some(_) => continue,
-                        None => return Err("lack of right paren".to_string()),
+                        None => return Err("lack of right paren 2".to_string()),
                     }
                 }
             }
+            Some(')') => Err("RightParen".to_string()),
             Some('*') => app(iota_expr, src),
             Some('0') => jot_expr(h, src),
             Some('1') => jot_expr(h, src),
