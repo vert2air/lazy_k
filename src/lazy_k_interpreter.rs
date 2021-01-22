@@ -1,7 +1,7 @@
 use super::lazy_k_core::*;
 
 pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
-    let lk2 = apply_fully(1_000_000, prog_data, PLamExpr::beta_red_cc, |x|
+    let lk2 = apply_fully(100_000_000, prog_data, PLamExpr::beta_red_cc, |x|
         if x.len() > 10_000_000 {
             Some("Space Limit".to_string())
         } else {
@@ -10,7 +10,7 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
     let mut lk = match lk2 {
         Ok((res, remain)) => res,
         Err((_, remain, msg)) => {
-            println!("Give up! : {} : {} / 1_000_000", msg, remain);
+            println!("Give up! : {} : {} / 100_000_000", msg, remain);
             return vec![256];
         }
     };

@@ -421,7 +421,7 @@ impl PLamExpr {
     /// assert_eq!( PLamExpr::beta_red_cc(&( k() * s() * (k() * s()) )),
     ///                 Some(s()) );
     /// ```
-    pub fn beta_red_cc(org: &Self) -> Option<Self> {
+    pub fn beta_red_cc2(org: &Self) -> Option<Self> {
         org.clone().apply_first(|x: Self| -> Option<Self> {
             match &*x.0 {
                 LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
@@ -443,6 +443,45 @@ impl PLamExpr {
                 _ => None,
             }
         })
+    }
+
+    pub fn beta_red_cc(org: &Self) -> Option<Self> {
+        let mut not_do_reduct_s_yet = true;
+        let pre = move |a: PLamExpr, _dummy: u8| -> Option<PLamExpr> {
+            match &*a.0 {
+                LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
+                    LamExpr::Nm { name } if **name == "I" => Some(o1.clone()),
+                    LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
+                        LamExpr::Nm { name } if **name == "K" =>
+                            // K o2 o1 ==beta=> o2
+                            Some(o2.clone()),
+                        LamExpr::App { func: f3, oprd: o3, .. } => match &*f3.0 {
+                            LamExpr::Nm { name } if **name == "S" => match &*o3.0 {
+                                LamExpr::Nm { name } if **name == "K" =>
+                                    // S K o2 o1 ==beta=> o1
+                                    Some(o1.clone()),
+                                _ => {
+                                    // S o3 o2 o1
+                                    if not_do_reduct_s_yet {
+                                        not_do_reduct_s_yet = false;
+                                        Some(o3.clone() * o1.clone()
+                                                * (o2.clone() * o1.clone()) )
+                                    } else {
+                                        None
+                                    }
+                                }
+                            }
+                            _ => None,
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                },
+                _ => None,
+            }
+        };
+        let (new, _) = org.clone().map_preorder(pre);
+        new
     }
 
     // Abstruction Elimination
