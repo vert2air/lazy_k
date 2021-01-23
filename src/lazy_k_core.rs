@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops::Mul;
 use std::rc::Rc;
 
+use super::rev_iter::RevIter;
 use super::traverse_tree::BinaryTree;
 use super::lazy_k_read::read_lazy_k;  // for test
 
@@ -734,29 +735,6 @@ pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, mut apply: F, mut check: G)
         }
     }
     Err((a, 0, "Time Limit".to_string()))
-}
-
-struct RevIter {
-    next: u32,
-    to: u32,
-}
-impl RevIter {
-    fn new(from: u32, to: u32) -> Self {
-        RevIter{ next: from, to: to }
-    }
-}
-impl Iterator for RevIter {
-    type Item = u32;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let cur = self.next;
-        if cur >= self.to {
-            self.next -= 1;
-            Some(cur)
-        } else {
-            None
-        }
-    }
 }
 
 impl Clone for PLamExpr {
