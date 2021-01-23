@@ -714,9 +714,9 @@ pub fn step_n<F, T>(cnt_max: u32, init: T, f: F) -> T
 ///                                 Err((12, 0, "Time Limit".to_string() ) ));
 /// assert_eq!( apply_fully( 9,  8, dec, check), Ok((1, 2) ));
 /// ```
-pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, apply: F, check: G)
+pub fn apply_fully<F, G, T>(cnt_max: u32, init: T, mut apply: F, mut check: G)
                         -> Result<(T, u32), (T, u32, String)>
-        where F: Fn(&T) -> Option<T>, G: Fn(&T) -> Option<String> {
+        where F: FnMut(&T) -> Option<T>, G: FnMut(&T) -> Option<String> {
     let mut a = init;
     for c in RevIter::new(cnt_max, 1) {
         match apply( &a ) {
