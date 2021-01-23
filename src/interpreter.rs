@@ -73,7 +73,7 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
 
 /// ```
 /// use crate::lazy_k::lazy_k_core::{la, v};
-/// use crate::lazy_k::lazy_k_interpreter::{is_nil};
+/// use crate::lazy_k::interpreter::{is_nil};
 /// let nil = la( la( v(1) ) );
 /// //assert_eq!( is_nil(&nil), true );
 /// ```

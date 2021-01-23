@@ -22,7 +22,7 @@ use super::lazy_k_core::{PLamExpr, nm, LamExpr};
 
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_goedel_number::n_to_unlam;
+/// use lazy_k::goedel_number::n_to_unlam;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
@@ -60,7 +60,7 @@ pub fn n_to_unlam(n: OurInt) -> PLamExpr {
 ///
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_goedel_number::n_to_min_unlam;
+/// use lazy_k::goedel_number::n_to_min_unlam;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
@@ -85,7 +85,7 @@ pub fn n_to_min_unlam(n: OurInt) -> Option<PLamExpr> {
 
 /// ```
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_goedel_number::n_to_iota;
+/// use lazy_k::goedel_number::n_to_iota;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// 
@@ -241,7 +241,7 @@ fn sum(v: Vec<OurInt>) -> OurInt {
 /// ```
 /// use lazy_k::lazy_k_core::i;
 /// use lazy_k::lazy_k_read::read_lazy_k;
-/// use lazy_k::lazy_k_goedel_number::lam_to_n;
+/// use lazy_k::goedel_number::lam_to_n;
 /// use std::convert::TryFrom;
 /// use num_bigint::BigInt;
 /// type OurInt = BigInt;

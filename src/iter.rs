@@ -211,9 +211,9 @@ fn test_first_min_size() {
 
 #[test]
 fn test_next_min() {
-    use super::lazy_k_goedel_number;
+    use super::goedel_number;
     use super::lazy_k_read::read_lazy_k;
-    let mut it = PLamExprIter::new(LEIterType::Min, lazy_k_goedel_number::our1(), None);
+    let mut it = PLamExprIter::new(LEIterType::Min, goedel_number::our1(), None);
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("k").unwrap());
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("s").unwrap());
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("`ki").unwrap());
@@ -231,7 +231,7 @@ fn test_next_min() {
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("`s`ki").unwrap());
 
     let a = read_lazy_k("``s`k``s`si`sik").unwrap();
-    let (_base, gn) = lazy_k_goedel_number::lam_to_n(&a);
+    let (_base, gn) = goedel_number::lam_to_n(&a);
     let mut it = PLamExprIter::new(LEIterType::Min, gn, None);
     it.next();
     let a = it.next();
