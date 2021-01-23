@@ -412,13 +412,11 @@ impl PLamExpr {
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
     ///
-    /// assert_eq!( PLamExpr::beta_red_cc( &(i() * i()) ), Some(i()) );
-    ///
-    /// assert_eq!( PLamExpr::beta_red_cc( &(s() * k() * k() * s()) ),
-    ///                 Some( k() * s() * (k() * s()) ) );
-    ///
-    /// assert_eq!( PLamExpr::beta_red_cc(&( k() * s() * (k() * s()) )),
-    ///                 Some(s()) );
+    /// assert_eq!( PLamExpr::beta_red_cc2( &(i() * i()) ), Some(i()) );
+    /// assert_eq!( PLamExpr::beta_red_cc2( &(s() * k() * k() * s()) ),
+    ///                                 Some( k() * s() * (k() * s()) ) );
+    /// assert_eq!( PLamExpr::beta_red_cc2(&( k() * s() * (k() * s()) )),
+    ///                                 Some(s()) );
     /// ```
     pub fn beta_red_cc2(org: &Self) -> Option<Self> {
         org.clone().apply_first(|x: Self| -> Option<Self> {
@@ -444,6 +442,15 @@ impl PLamExpr {
         })
     }
 
+    /// ```
+    /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
+    ///
+    /// assert_eq!( PLamExpr::beta_red_cc( &(i() * i()) ), Some(i()) );
+    /// assert_eq!( PLamExpr::beta_red_cc( &(s() * k() * k() * s()) ),
+    ///                                                     Some(s()) );
+    /// assert_eq!( PLamExpr::beta_red_cc(&( k() * s() * (k() * s()) )),
+    ///                                                     Some(s()) );
+    /// ```
     pub fn beta_red_cc(org: &Self) -> Option<Self> {
         let mut not_do_reduct_s_yet = true;
         let pre = move |a: PLamExpr, _dummy: u8| -> Option<PLamExpr> {
