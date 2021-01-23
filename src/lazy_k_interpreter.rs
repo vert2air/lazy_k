@@ -1,12 +1,18 @@
 use super::lazy_k_core::*;
 
 pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
-    let lk2 = apply_fully(100_000_000, prog_data, PLamExpr::beta_red_cc, |x|
+    let mut cnt = 0;
+    let lk2 = apply_fully(100_000_000, prog_data, PLamExpr::beta_red_cc, move |x| {
+        cnt += 1;
+        if cnt % 10_000 == 0 {
+            println!("cnt = {}, len = {}", cnt, x.len());
+        }
         if x.len() > 10_000_000 {
             Some("Space Limit".to_string())
         } else {
             None
-        });
+        }
+    });
     let mut lk = match lk2 {
         Ok((res, remain)) => res,
         Err((_, remain, msg)) => {
