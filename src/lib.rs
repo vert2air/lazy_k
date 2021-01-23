@@ -9,7 +9,7 @@ pub mod iter;
 pub mod lazy_k_read;
 pub mod lazy_k_interpreter;
 pub mod goedel_number;
-pub mod lazy_k_mining;
+pub mod mining;
 pub mod cons_list;
 pub mod rev_iter;
 pub mod traverse_tree;
@@ -49,14 +49,14 @@ pub fn mining_between(args: Vec<String>) {
         let f = OurInt::try_from(2_471_450).unwrap();
         //let to = Some(OurInt::try_from(100).unwrap());
         let to = Some(OurInt::try_from(5_471_450).unwrap());
-        lazy_k_mining::mining(f, to);
+        mining::mining(f, to);
     } else if args.len() == 3 {
         let from = str_to_bigint(&args[2]);
-        lazy_k_mining::mining(from, None);
+        mining::mining(from, None);
     } else if args.len() == 4 {
         let from = str_to_bigint(&args[2]);
         let to   = str_to_bigint(&args[3]);
-        lazy_k_mining::mining(from, Some(to));
+        mining::mining(from, Some(to));
     } else {
     }
 }
