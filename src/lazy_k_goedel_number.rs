@@ -1,4 +1,3 @@
-//extern crate num_bigint;
 extern crate num_traits;
 
 use std::cmp::{PartialOrd, Ordering};
@@ -19,7 +18,6 @@ pub fn our1() -> OurInt { One::one() }
 //pub fn our1() -> OurInt { 1 }
 
 use super::lazy_k_core::{PLamExpr, nm, LamExpr};
-use super::lazy_k_read::read_lazy_k;    // for test
 
 
 /// ```
@@ -382,6 +380,7 @@ fn test_mul_up_down() {
 
 #[test]
 fn test_read_n_to_unlam() {
+    use super::lazy_k_read::read_lazy_k;
     fn bn(a: i32) -> OurInt {
         match OurInt::try_from(a) {
             Ok(a2) => a2,
