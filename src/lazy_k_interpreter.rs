@@ -1,6 +1,8 @@
+use std::char;
+
 use super::lazy_k_core::*;
 
-pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
+pub fn exec_lazy_k2(prog_data: PLamExpr) -> Vec<u32> {
     let mut cnt = 0;
     let lk2 = apply_fully(100_000_000, prog_data, PLamExpr::beta_red_cc, move |x| {
         cnt += 1;
@@ -32,6 +34,36 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
                 v.push(n);
             }
             _ => break,
+        }
+        let cdr = s() * i() * (k() * (k() * i()));
+        lk = cdr * lk;
+    }
+    v
+}
+
+pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
+    let mut v = Vec::new();
+    let mut lk = prog_data;
+    loop {
+        if is_nil(&lk) {
+            println!("output: NULL terminated");
+            break;
+        }
+        let car = s() * i() * (k() * k());
+        match (car * lk.clone()).get_num_n(100_000_000) {
+            Ok((n, c)) if n < 256 => {
+                println!("calculating[{}] : '{}' ({:>3} = 0x{:02x}): c={}",
+                            v.len(), char::from_u32(n).unwrap(), n, n, c);
+                v.push(n);
+            }
+            Ok((n, c)) => {
+                println!("output: over 255: {}, c={}", n, c);
+                break;
+            }
+            Err(msg) => {
+                println!("output: Non-number: {}", msg);
+                break;
+            }
         }
         let cdr = s() * i() * (k() * (k() * i()));
         lk = cdr * lk;
