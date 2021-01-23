@@ -5,6 +5,7 @@ use std::fs;
 use lazy_k_goedel_number::{OurInt, n_to_unlam};
 
 pub mod lazy_k_core;
+pub mod iter;
 pub mod lazy_k_read;
 pub mod lazy_k_interpreter;
 pub mod lazy_k_goedel_number;
