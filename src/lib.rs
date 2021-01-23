@@ -2,13 +2,13 @@ use num_bigint::BigInt;
 use std::convert::TryFrom;
 use std::fs;
 
-use lazy_k_goedel_number::{OurInt, n_to_unlam};
+use goedel_number::{OurInt, n_to_unlam};
 
 pub mod lazy_k_core;
 pub mod iter;
 pub mod lazy_k_read;
 pub mod lazy_k_interpreter;
-pub mod lazy_k_goedel_number;
+pub mod goedel_number;
 pub mod lazy_k_mining;
 pub mod cons_list;
 pub mod rev_iter;
@@ -28,7 +28,7 @@ fn str_to_bigint(s: &str) -> BigInt {
 pub fn unlam_to_gn(unlam: &str) {
     match lazy_k_read::read_lazy_k(unlam) {
         Ok(expr) => {
-            let (_, gn) = lazy_k_goedel_number::lam_to_n(&expr);
+            let (_, gn) = goedel_number::lam_to_n(&expr);
             println!("{}", gn)
         }
         Err(msg) => println!("read_lazy_k Error: {}", msg),

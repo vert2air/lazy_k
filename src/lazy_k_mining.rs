@@ -1,5 +1,5 @@
 use super::lazy_k_core::{PLamExpr, i};
-use super::lazy_k_goedel_number::OurInt;
+use super::goedel_number::OurInt;
 use super::iter::{PLamExprIter, LEIterType};
 
 pub fn mine_ch_num(a: PLamExpr) -> Result<(u32, u32), String> {

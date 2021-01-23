@@ -1,6 +1,6 @@
 use super::lazy_k_core::{LamExpr, PLamExpr, i, k, s};
-use super::lazy_k_goedel_number;
-use super::lazy_k_goedel_number::OurInt;
+use super::goedel_number;
+use super::goedel_number::OurInt;
 
 pub enum LEIterType {
     All,
@@ -26,21 +26,21 @@ impl PLamExprIter {
 
     fn new_all(f: OurInt, t: Option<OurInt>) -> Self {
         PLamExprIter {
-            next_one: Some(lazy_k_goedel_number::n_to_unlam(f)),
+            next_one: Some(goedel_number::n_to_unlam(f)),
             last_one: None,
             next_func: Self::next_all,
             need_min: false,
             to_one: match t {
-                Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
+                Some(t) => Some(goedel_number::n_to_unlam(t)),
                 None => None,
             },
         }
     }
 
     fn new_min(f: OurInt, t: Option<OurInt>) -> Self {
-        let an = lazy_k_goedel_number::n_to_unlam(f);
+        let an = goedel_number::n_to_unlam(f);
         let oto = match t {
-            Some(t) => Some(lazy_k_goedel_number::n_to_unlam(t)),
+            Some(t) => Some(goedel_number::n_to_unlam(t)),
             None => None,
         };
         if an.is_min() {
