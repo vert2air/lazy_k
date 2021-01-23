@@ -948,18 +948,6 @@ fn test_subst() {
 }
 
 #[test]
-fn test_change_once() {
-    fn foo(a: PLamExpr) -> Option<PLamExpr> {
-        println!("{}", a.to_unlam().unwrap());
-        None
-    }
-    //assert_eq!( ChNumEval(s()*s()*k()*(k()*i())).change_once(foo), Some(ChNumEval(i())) );
-    //assert_eq!( ChNumEval(s()*k()).change_once(foo), Some(ChNumEval(i())) );
-    //assert_eq!( ChNumEval(i()).change_once(foo), Some(ChNumEval(i())) );
-
-}
-
-#[test]
 fn test_eval_cc() {
     let o = ChNumEval::to_ch_num_eval(i());
     let a = o.clone().eval_cc();
