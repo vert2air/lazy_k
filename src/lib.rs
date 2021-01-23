@@ -7,7 +7,7 @@ use goedel_number::{OurInt, n_to_unlam};
 pub mod lazy_k_core;
 pub mod iter;
 pub mod lazy_k_read;
-pub mod lazy_k_interpreter;
+pub mod interpreter;
 pub mod goedel_number;
 pub mod mining;
 pub mod cons_list;
@@ -40,7 +40,7 @@ pub fn interpreter_lazy_k(prog_fn: &str, arg_fn: &str) {
     let prog = lazy_k_read::read_lazy_k(&prog_str).unwrap();
     let arg_str = fs::read_to_string(arg_fn).unwrap();
     let arg = lazy_k_read::read_lazy_k(&arg_str).unwrap();
-    let _ = lazy_k_interpreter::exec_lazy_k(prog * arg);
+    let _ = interpreter::exec_lazy_k(prog * arg);
 }
 
 pub fn mining_between(args: Vec<String>) {
