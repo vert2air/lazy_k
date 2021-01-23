@@ -4,7 +4,6 @@ use std::rc::Rc;
 
 use super::rev_iter::RevIter;
 use super::traverse_tree::BinaryTree;
-use super::lazy_k_read::read_lazy_k;  // for test
 
 #[derive(Eq, PartialEq)]
 pub enum LamExpr {
@@ -927,6 +926,7 @@ fn test_subst() {
 
 #[test]
 fn test_eval_cc() {
+    use super::lazy_k_read::read_lazy_k;
     let o = ChNumEval::to_ch_num_eval(i());
     let a = o.clone().eval_cc();
     let o = a.clone().map_or(o, |x| x);
