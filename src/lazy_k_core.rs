@@ -2,7 +2,6 @@ use std::fmt;
 use std::ops::Mul;
 use std::rc::Rc;
 
-use super::cons_list::ConsList;
 use super::traverse_tree::BinaryTree;
 use super::lazy_k_read::read_lazy_k;  // for test
 
@@ -929,12 +928,6 @@ impl ChNumEval {
         }
     }
 
-}
-
-#[derive(Clone)]
-enum PathInfo<'a> {
-    Func { oprd: &'a PLamExpr },
-    Oprd { func: &'a PLamExpr },
 }
 
 
