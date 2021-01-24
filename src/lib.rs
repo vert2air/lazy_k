@@ -13,6 +13,7 @@ pub mod mining;
 pub mod cons_list;
 pub mod rev_iter;
 pub mod traverse_tree;
+pub mod experiment;
 
 pub fn gn_to_unlam(gn_str: &str) {
     println!("{}", n_to_unlam(str_to_bigint(gn_str)).to_unlam().unwrap());

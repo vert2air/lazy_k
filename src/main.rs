@@ -14,6 +14,8 @@ fn main() {
                 lazy_k::interpreter_lazy_k(&args[2], &args[3]),
             x if x == "mining" =>
                 lazy_k::mining_between(args),
+            x if x == "experiment" =>
+                lazy_k::experiment::experiment(args),
             _ => usage(),
         }
     } else {
@@ -27,5 +29,6 @@ fn usage() {
     println!("    unlam_to_gn <Unlambda_style_LazyK_expression>");
     println!("    lazy_k <program> <argument>");
     println!("    mining <starting_goedel_number> [<end_goedel_number>]");
+    println!("    experiment <Lazy K expression file name>");
 }
 
