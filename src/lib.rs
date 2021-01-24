@@ -44,20 +44,20 @@ pub fn interpreter_lazy_k(prog_fn: &str, arg_fn: &str) {
 }
 
 pub fn mining_between(args: Vec<String>) {
-    if args.len() == 2 {
-        //let f = OurInt::try_from(1).unwrap();
-        let f = OurInt::try_from(2_471_450).unwrap();
-        //let to = Some(OurInt::try_from(100).unwrap());
-        let to = Some(OurInt::try_from(5_471_450).unwrap());
-        mining::mining(f, to);
-    } else if args.len() == 3 {
-        let from = str_to_bigint(&args[2]);
-        mining::mining(from, None);
-    } else if args.len() == 4 {
-        let from = str_to_bigint(&args[2]);
-        let to   = str_to_bigint(&args[3]);
-        mining::mining(from, Some(to));
-    } else {
-    }
+    let (from, to) = match args.len() {
+        2 => {
+            (
+                //OurInt::try_from(1).unwrap()
+                OurInt::try_from(2_471_450).unwrap()
+            ,
+                //Some(OurInt::try_from(100).unwrap())
+                Some(OurInt::try_from(5_471_450).unwrap())
+            )
+        }
+        3 => ( str_to_bigint(&args[2]), None ),
+        4 => ( str_to_bigint(&args[2]), Some( str_to_bigint(&args[3]) ) ),
+        _ => return
+    };
+    mining::mining(from, to);
 }
 
