@@ -43,7 +43,15 @@ pub fn exec_lazy_k2(prog_data: PLamExpr) -> Vec<u32> {
 
 pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
     let mut v = Vec::new();
-    let mut lk = prog_data;
+    let mut lk = prog_data; //[.clone();
+    /*
+    match apply_fully(1_000_000, prog_data, PLamExpr::beta_red_cc, |x| None) {
+        Err((r, _, msg)) => {
+            println!("msg : {}", msg);
+            lk = r;
+        }
+        _ => panic!("exec_lazy_k"),
+    }*/
     loop {
         if is_nil(&lk) {
             println!("output: NULL terminated");
@@ -66,7 +74,14 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
             }
         }
         let cdr = s() * i() * (k() * (k() * i()));
-        lk = cdr * lk;
+        match apply_fully(50_000, cdr * lk, PLamExpr::beta_red_cc, |x| None) {
+            Err((r, _, msg)) => {
+                println!("msg : {}, len = {}", msg, r.len());
+                lk = r;
+            }
+            _ => panic!("exec_lazy_k"),
+        }
+        //lk = cdr * lk;
     }
     v
 }

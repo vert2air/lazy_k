@@ -18,7 +18,14 @@ pub fn experiment(args: Vec<String>) {
     ana_tree(w.clone());
     println!("");
     match lazy_k_core::apply_fully(100, w, |x| PLamExpr::beta_red_cc(&x), |_| None) {
-        Err((r, _, _)) => ana_tree(r),
+        Err((r, _, _)) => {
+            ana_tree(r.clone());
+            match lazy_k_core::apply_fully(100, r,
+                                |x| PLamExpr::beta_red_cc(&x), |_| None) {
+                Err((r, _, _)) => ana_tree(r.clone()),
+                _ => ()
+            }
+        }
         _ => ()
     }
 }
