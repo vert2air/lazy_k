@@ -204,6 +204,71 @@ fn test_decompose() {
     test("```kssk", "`s`i`ks");
 }
 
+fn goedel_number_len(n: OurInt) -> usize {
+    let base = 3;
+    let lsiz = build_layer(OurInt::try_from(base).unwrap(), n.clone());
+    lsiz.len()
+}
+
+#[test]
+fn test_goedel_number_len() {
+    fn n(i: u32) -> OurInt {
+        OurInt::try_from(i).unwrap()
+    }
+    assert_eq!( goedel_number_len(n(0)), 0 );
+    assert_eq!( goedel_number_len(n(2)), 0 );
+    assert_eq!( goedel_number_len(n(3)), 1 );
+    assert_eq!( goedel_number_len(n(11)), 1 );
+    assert_eq!( goedel_number_len(n(12)), 2 );
+    assert_eq!( goedel_number_len(n(65)), 2 );
+    assert_eq!( goedel_number_len(n(66)), 3 );
+}
+
+fn compose(nf: OurInt, no: OurInt) -> OurInt {
+    let sf = goedel_number_len(nf.clone()) * 2 + 1;
+    let so = goedel_number_len(no.clone()) * 2 + 1;
+    let mut lsiz = vec![OurInt::try_from(3).unwrap()];
+    for _ in 1 .. (1 + sf + so + 1) / 2 - 1{
+        let n = mul_up_down(&lsiz);
+        lsiz.push(sum(n));
+    }
+    let (_, nf2) = sub_rem(nf, &lsiz);
+    let (_, no2) = sub_rem(no, &lsiz);
+    let ud = mul_up_down(&lsiz);
+    let mut a = our0();
+    for i in 0 .. (sf - 1) / 2 {
+        a += ud[i].clone();
+    }
+    lsiz[(so - 1) / 2].clone() * nf2 + no2 + a + sum(lsiz)
+}
+
+#[test]
+fn test_compose_basic() {
+    fn n(i: u32) -> OurInt {
+        OurInt::try_from(i).unwrap()
+    }
+    assert_eq!( compose(n(0), n(0)), n( 3) );
+    assert_eq!( compose(n(0), n(1)), n( 4) );
+    assert_eq!( compose(n(0), n(2)), n( 5) );
+    assert_eq!( compose(n(1), n(0)), n( 6) );
+    assert_eq!( compose(n(1), n(1)), n( 7) );
+    assert_eq!( compose(n(1), n(2)), n( 8) );
+    assert_eq!( compose(n(2), n(0)), n( 9) );
+    assert_eq!( compose(n(2), n(1)), n(10) );
+    assert_eq!( compose(n(2), n(2)), n(11) );
+
+    assert_eq!( compose(n(0), n( 3)), n(12) );
+    assert_eq!( compose(n(0), n( 4)), n(13) );
+    assert_eq!( compose(n(0), n( 5)), n(14) );
+    assert_eq!( compose(n(0), n( 6)), n(15) );
+    assert_eq!( compose(n(0), n(11)), n(20) );
+    assert_eq!( compose(n(1), n( 3)), n(21) );
+    assert_eq!( compose(n(1), n(11)), n(29) );
+    assert_eq!( compose(n(2), n( 3)), n(30) );
+    assert_eq!( compose(n(2), n(11)), n(38) );
+    assert_eq!( compose(n(3), n( 0)), n(39) );
+}
+
 fn n_to_min_expr(b: Vec<String>, n: OurInt) -> Option<PLamExpr> {
     let lsiz = match OurInt::try_from(b.len()) {
         Ok(size) => build_layer(size, n.clone()),
