@@ -139,6 +139,71 @@ fn n_to_expr_aux(b: Vec<String>, lsiz: &[OurInt], n: OurInt) -> PLamExpr {
     f * o
 }
 
+fn decompose(n: OurInt) -> Option<(OurInt, OurInt)> {
+    let base = 3;
+    let lsiz = match OurInt::try_from(base) {
+        Ok(size) => build_layer(size, n.clone()),
+        Err(_) => panic!("decompose"),
+    };
+    let sum: OurInt = lsiz.iter().fold(our0(), |acc, a| acc + a);
+    let n = n - sum;
+    if lsiz.len() == 0 {
+        return None
+    }
+    let (g, t) = sub_rem(n, &mul_up_down(&lsiz.to_vec()));
+    let m = t.clone()       % lsiz[g].clone();
+    let d = (t - m.clone()) / lsiz[g].clone();
+    let sumF = lsiz[lsiz.len() - g ..].iter().fold(our0(), |acc, a| acc + a);
+    let sumO = lsiz[g + 1          ..].iter().fold(our0(), |acc, a| acc + a);
+    Some((d +sumF, m + sumO))
+}
+
+#[test]
+fn test_decompose_basic() {
+    fn n(i: u32) -> OurInt {
+        OurInt::try_from(i).unwrap()
+    }
+    assert_eq!( decompose(n(0)), None);
+    assert_eq!( decompose(n(1)), None);
+    assert_eq!( decompose(n(2)), None);
+
+    assert_eq!( decompose(n( 3)), Some((n(0),n(0))) );
+    assert_eq!( decompose(n( 4)), Some((n(0),n(1))) );
+    assert_eq!( decompose(n( 5)), Some((n(0),n(2))) );
+    assert_eq!( decompose(n( 6)), Some((n(1),n(0))) );
+    assert_eq!( decompose(n( 7)), Some((n(1),n(1))) );
+    assert_eq!( decompose(n( 8)), Some((n(1),n(2))) );
+    assert_eq!( decompose(n( 9)), Some((n(2),n(0))) );
+    assert_eq!( decompose(n(10)), Some((n(2),n(1))) );
+    assert_eq!( decompose(n(11)), Some((n(2),n(2))) );
+
+    assert_eq!( decompose(n(12)), Some((n(0),n(3))) );
+    assert_eq!( decompose(n(13)), Some((n(0),n(4))) );
+    assert_eq!( decompose(n(14)), Some((n(0),n(5))) );
+    assert_eq!( decompose(n(15)), Some((n(0),n(6))) );
+    assert_eq!( decompose(n(20)), Some((n(0),n(11))) );
+    assert_eq!( decompose(n(21)), Some((n(1),n(3))) );
+    assert_eq!( decompose(n(29)), Some((n(1),n(11))) );
+    assert_eq!( decompose(n(30)), Some((n(2),n(3))) );
+    assert_eq!( decompose(n(38)), Some((n(2),n(11))) );
+    assert_eq!( decompose(n(39)), Some((n(3),n(0))) );
+}
+
+#[test]
+fn test_decompose() {
+    use super::lazy_k_read::read_lazy_k;
+    fn test(a: &str, b: &str) {
+        let a = read_lazy_k(a).unwrap();
+        let b = read_lazy_k(b).unwrap();
+        let (_, na) = lam_to_n(&a.clone());
+        let (_, nb) = lam_to_n(&b.clone());
+        let (_, nab) = lam_to_n(&(a*b));
+        assert_eq!( decompose(nab), Some((na, nb)) );
+    }
+    test("``ssk", "`ks");
+    test("```kssk", "`s`i`ks");
+}
+
 fn n_to_min_expr(b: Vec<String>, n: OurInt) -> Option<PLamExpr> {
     let lsiz = match OurInt::try_from(b.len()) {
         Ok(size) => build_layer(size, n.clone()),
