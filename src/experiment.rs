@@ -8,7 +8,8 @@ use super::lazy_k_read;
 use super::lazy_k_core;
 use super::lazy_k_core::{PLamExpr, LamExpr};
 use super::goedel_number;
-use super::goedel_number::{OurInt, mul_up_down};
+//use super::goedel_number::{OurInt, mul_up_down};
+use super::goedel_number::{OurInt};
 
 pub fn experiment(args: Vec<String>) {
     let prog = fs::read_to_string(&args[2]).unwrap();
@@ -70,16 +71,19 @@ fn inc(map: &mut BTreeMap<BigInt, u32>, idx: BigInt) {
 struct LenToNum {
     num: Vec<OurInt>,
     acc: Vec<OurInt>,
+    pair: Vec<Vec<OurInt>>,
     base: OurInt,
 }
 
 impl LenToNum {
 
     fn new(b: i32) -> Self {
+        let ob = OurInt::try_from(b).unwrap();
         LenToNum {
-            num: vec![],
-            acc: vec![],
-            base: b,
+            num: vec![ob],
+            acc: vec![ob],
+            pair: vec![vec![]],
+            base: ob,
         }
     }
 
@@ -87,17 +91,20 @@ impl LenToNum {
         let idx = len - 1;
         match self.num.get(idx) {
             Some(_) => (),
-            None => match idx {
-                0 => {
-                    self.num.insert(0, self.base);
-                    self.acc.insert(0, self.base);
-                },
-                i => {
-                    self.prepare_len(i);
-                    let v = mul_up_down(self.num.iter().to_list());
-                    self.num.insert(i, v);
-                    self.acc.insert(i, v + self.acc.get(i).unwrap());
+            None => {
+                self.prepare_len(idx);
+                let mut res = Vec::new();
+                for i in 0 .. idx {
+                    res.push(self.num[i] * self.num[idx - i - 1]);
                 }
+                self.pair.insert(idx, res);
+                let mut s = Zero::zero();
+                for p in self.pair.get(idx).unwrap().iter() {
+                    s += p;
+                }
+                self.num.insert(idx, s);
+                self.acc.insert(idx, self.num.get(idx).unwrap()
+                                    + self.acc.get(idx - 1).unwrap());
             }
         }
     }
