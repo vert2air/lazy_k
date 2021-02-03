@@ -6,6 +6,7 @@ use std::fs;
 
 use super::lazy_k_read;
 use super::lazy_k_core;
+use super::rev_iter::RevIter;
 use super::lazy_k_core::{PLamExpr, LamExpr};
 use super::goedel_number;
 //use super::goedel_number::{OurInt, mul_up_down};
@@ -68,38 +69,43 @@ fn inc(map: &mut BTreeMap<BigInt, u32>, idx: BigInt) {
     };
 }
 
-struct LenToNum {
-    num: Vec<OurInt>,
-    acc: Vec<OurInt>,
-    pair: Vec<Vec<OurInt>>,
-    base: OurInt,
+type GN = BigInt;
+
+struct GNBuilder {
+    num: Vec<GN>,
+    acc: Vec<GN>,
+    pair_num: Vec<Vec<GN>>,
+    pair_acc: Vec<Vec<GN>>,
+    base: String[],
 }
 
-impl LenToNum {
+impl GNBuilder {
 
-    fn new(b: i32) -> Self {
-        let ob = OurInt::try_from(b).unwrap();
-        LenToNum {
+    pub fn new(b: String[]) -> Self {
+        let ob = GN::try_from(b.len()).unwrap();
+        GNBuilder {
             num: vec![ob],
             acc: vec![ob],
-            pair: vec![vec![]],
-            base: ob,
+            pair_num: vec![vec![]],
+            pair_acc: vec![vec![]],
+            base: b,
         }
     }
 
-    fn prepare_len(&self, len: usize) {
-        let idx = len - 1;
+    fn prepare_count(&self, cnt: usize) {
+        let idx = cnt - 1;
         match self.num.get(idx) {
             Some(_) => (),
             None => {
-                self.prepare_len(idx);
+                self.prepare_count(idx);
                 let mut res = Vec::new();
                 for i in 0 .. idx {
                     res.push(self.num[i] * self.num[idx - i - 1]);
                 }
-                self.pair.insert(idx, res);
+                self.pair_num.insert(idx, res);
+
                 let mut s = Zero::zero();
-                for p in self.pair.get(idx).unwrap().iter() {
+                for p in self.pair_num.get(idx).unwrap().iter() {
                     s += p;
                 }
                 self.num.insert(idx, s);
@@ -109,31 +115,50 @@ impl LenToNum {
         }
     }
 
-    fn prepare_gn(&self, gn: OurInt) {
+    fn prepare_gn(&self, gn: GN) {
         loop {
             if gn < self.acc[self.acc.len() - 1] {
                 break;
             }
-            self.prepare_len(self.acc.len() + 1)
+            self.prepare_len(self.acc.len());
         }
+    }
+
+    /// the Number of I, K, S
+    pub fn count(&self, gn: GN) -> usize {
+        self.prepare_gn(gn);
+        for c in RevIter::new(self.acc.len() - 1, 0) {
+            if gn < self.acc.get(c).unwrap() {
+                return c + 1;
+            }
+        }
+    }
+
+    pub fn compose(&self, nf: GN, no: GN) -> GN {
+        let total_cnt = self.count(nf) + self.count(no);
+        self.prepare_count(total_cnt);
+        let (_, nf2) = sub_rem(nf, self.acc);
+        let (_, no2) = sub_rem(no, self.acc);
+        //self.count(nf)
+        self.num
     }
 
     /// Return the number of all expressions which has 'len' functions 
     /// ```
-    /// fn n(num: u32) -> OurInt {
-    ///     match OurInt::try_from(num) {
+    /// fn n(num: u32) -> GN {
+    ///     match GN::try_from(num) {
     ///         Ok(a) => a,
     ///         _ => panic!("lam_to_n(0)"),
     ///     }
     /// };
     /// 
-    /// let l2n = LenToNum::new(3);
+    /// let l2n = GNBuilder::new(3);
     /// assert_eq!( l2n.get(n(1)), n(3) )
     /// assert_eq!( l2n.get(n(2)), n(3 * 3) )       // 9
     /// //assert_eq!( l2n.get(n(3)), n(3 * 9 * 2) )   // 54
     /// assert_eq!( l2n.get(n(4)), n(3 * 54 * 2 + 9 * 9) )
     /// ```
-    fn get(&mut self, len: &usize) -> OurInt {
+    fn get(&mut self, len: &usize) -> GN {
         let idx = len - 1;
         match self.num.get(idx) {
             Some(n) => n,
