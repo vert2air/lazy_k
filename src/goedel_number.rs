@@ -337,7 +337,7 @@ fn build_layer<T: Ord + AddAssign + Sub<Output = T> + SubAssign + Mul<Output = T
     }
 }
 
-fn sub_rem<T: Ord + SubAssign + Clone>(n0: T, ns: &Vec<T>) -> (usize, T) {
+pub fn sub_rem<T: Ord + SubAssign + Clone>(n0: T, ns: &Vec<T>) -> (usize, T) {
     let mut n = n0;
     for i in 0 .. ns.len() {
         if n < ns[i] {

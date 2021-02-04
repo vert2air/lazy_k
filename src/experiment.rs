@@ -10,7 +10,7 @@ use super::rev_iter::RevIter;
 use super::lazy_k_core::{PLamExpr, LamExpr};
 use super::goedel_number;
 //use super::goedel_number::{OurInt, mul_up_down};
-use super::goedel_number::{OurInt};
+use super::goedel_number::{OurInt, sub_rem};
 
 pub fn experiment(args: Vec<String>) {
     let prog = fs::read_to_string(&args[2]).unwrap();
@@ -76,12 +76,12 @@ struct GNBuilder {
     acc: Vec<GN>,
     pair_num: Vec<Vec<GN>>,
     pair_acc: Vec<Vec<GN>>,
-    base: String[],
+    base: Vec<String>,
 }
 
 impl GNBuilder {
 
-    pub fn new(b: String[]) -> Self {
+    pub fn new(b: Vec<String>) -> Self {
         let ob = GN::try_from(b.len()).unwrap();
         GNBuilder {
             num: vec![ob],
@@ -104,6 +104,14 @@ impl GNBuilder {
                 }
                 self.pair_num.insert(idx, res);
 
+                let mut res = Vec::new();
+                let mut sum = Zero::zero();
+                for i in 0 .. idx {
+                    sum += self.pair_num.get(idx).unwrap().clone();
+                    res.push(sum);
+                }
+                self.pair_acc.insert(idx, res);
+
                 let mut s = Zero::zero();
                 for p in self.pair_num.get(idx).unwrap().iter() {
                     s += p;
@@ -120,7 +128,7 @@ impl GNBuilder {
             if gn < self.acc[self.acc.len() - 1] {
                 break;
             }
-            self.prepare_len(self.acc.len());
+            self.prepare_count(self.acc.len());
         }
     }
 
@@ -128,7 +136,7 @@ impl GNBuilder {
     pub fn count(&self, gn: GN) -> usize {
         self.prepare_gn(gn);
         for c in RevIter::new(self.acc.len() - 1, 0) {
-            if gn < self.acc.get(c).unwrap() {
+            if gn < self.acc.get(c).unwrap().clone() {
                 return c + 1;
             }
         }
