@@ -1,22 +1,24 @@
+use std::ops::SubAssign;
+use num_traits::One;
 
-pub struct RevIter {
-    next: u32,
-    to: u32,
+pub struct RevIter<T> {
+    next: T,
+    to: T,
 }
 
-impl RevIter {
-    pub fn new(from: u32, to: u32) -> Self {
+impl<T> RevIter<T> {
+    pub fn new(from: T, to: T) -> Self {
         RevIter{ next: from, to: to }
     }
 }
 
-impl Iterator for RevIter {
-    type Item = u32;
+impl<T: Clone + Ord + SubAssign + One> Iterator for RevIter<T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let cur = self.next;
+        let cur = self.next.clone();
         if cur >= self.to {
-            self.next -= 1;
+            self.next -= One::one();
             Some(cur)
         } else {
             None
