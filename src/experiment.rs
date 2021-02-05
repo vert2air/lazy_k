@@ -9,8 +9,7 @@ use super::lazy_k_core;
 use super::rev_iter::RevIter;
 use super::lazy_k_core::{PLamExpr, LamExpr};
 use super::goedel_number;
-//use super::goedel_number::{OurInt, mul_up_down};
-use super::goedel_number::{OurInt, sub_rem};
+use super::goedel_number::{sub_rem};
 
 pub fn experiment(args: Vec<String>) {
     let prog = fs::read_to_string(&args[2]).unwrap();
@@ -71,6 +70,7 @@ fn inc(map: &mut BTreeMap<BigInt, u32>, idx: BigInt) {
 
 type GN = BigInt;
 
+#[derive(PartialEq, Eq, Debug)]
 struct GNBuilder {
     num: Vec<GN>,
     acc: Vec<GN>,
@@ -84,7 +84,7 @@ impl GNBuilder {
     pub fn new(b: Vec<String>) -> Self {
         let ob = GN::try_from(b.len()).unwrap();
         GNBuilder {
-            num: vec![ob],
+            num: vec![ob.clone()],
             acc: vec![ob],
             pair_num: vec![vec![]],
             pair_acc: vec![vec![]],
@@ -92,105 +92,185 @@ impl GNBuilder {
         }
     }
 
-    fn prepare_count(&self, cnt: usize) {
+    fn prepare_count(&mut self, cnt: usize) {
         let idx = cnt - 1;
         match self.num.get(idx) {
             Some(_) => (),
             None => {
                 self.prepare_count(idx);
-                let mut res = Vec::new();
+                let mut pnum = Vec::new();
+                let mut pacc = Vec::new();
+                let mut sum: GN = Zero::zero();
                 for i in 0 .. idx {
-                    res.push(self.num[i] * self.num[idx - i - 1]);
+                    pnum.push(self.num[i].clone()
+                              * self.num[idx - i - 1].clone());
+                    sum += pnum[pnum.len() - 1].clone();
+                    pacc.push(sum.clone());
                 }
-                self.pair_num.insert(idx, res);
-
-                let mut res = Vec::new();
-                let mut sum = Zero::zero();
-                for i in 0 .. idx {
-                    sum += self.pair_num.get(idx).unwrap().clone();
-                    res.push(sum);
-                }
-                self.pair_acc.insert(idx, res);
-
-                let mut s = Zero::zero();
-                for p in self.pair_num.get(idx).unwrap().iter() {
-                    s += p;
-                }
-                self.num.insert(idx, s);
-                self.acc.insert(idx, self.num.get(idx).unwrap()
-                                    + self.acc.get(idx - 1).unwrap());
+                self.pair_num.insert(idx, pnum);
+                self.pair_acc.insert(idx, pacc.clone());
+                self.num.insert(idx, pacc[pacc.len() - 1].clone());
+                self.acc.insert(idx, self.num[idx].clone()
+                                    + self.acc[idx - 1].clone());
             }
         }
     }
 
-    fn prepare_gn(&self, gn: GN) {
+    fn prepare_gn(&mut self, gn: GN) {
         loop {
             if gn < self.acc[self.acc.len() - 1] {
                 break;
             }
-            self.prepare_count(self.acc.len());
+            self.prepare_count(self.acc.len() + 1);
         }
     }
 
     /// the Number of I, K, S
-    pub fn count(&self, gn: GN) -> usize {
-        self.prepare_gn(gn);
+    pub fn count(&mut self, gn: GN) -> usize {
+        self.prepare_gn(gn.clone());
         for c in RevIter::new(self.acc.len() - 1, 0) {
-            if gn < self.acc.get(c).unwrap().clone() {
+            if gn < self.acc[c] {
                 return c + 1;
             }
         }
+        0
     }
 
-    pub fn compose(&self, nf: GN, no: GN) -> GN {
-        let total_cnt = self.count(nf) + self.count(no);
+    pub fn compose(&mut self, nf: GN, no: GN) -> GN {
+        let sf = self.count(nf.clone());
+        let so = self.count(no.clone());
+        let total_cnt = sf.clone() + so.clone();
         self.prepare_count(total_cnt);
-        let (_, nf2) = sub_rem(nf, self.acc);
-        let (_, no2) = sub_rem(no, self.acc);
-        //self.count(nf)
-        self.num
+        let (_, nf2) = sub_rem(nf, &self.acc);
+        let (_, no2) = sub_rem(no, &self.acc);
+        self.num[sf - 1].clone() * nf2 + no2
+                    + self.pair_acc[total_cnt - 1][sf - 1].clone()
+                        + self.acc[total_cnt - 1].clone()
     }
 
-    /// Return the number of all expressions which has 'len' functions 
-    /// ```
-    /// fn n(num: u32) -> GN {
-    ///     match GN::try_from(num) {
-    ///         Ok(a) => a,
-    ///         _ => panic!("lam_to_n(0)"),
-    ///     }
-    /// };
-    /// 
-    /// let l2n = GNBuilder::new(3);
-    /// assert_eq!( l2n.get(n(1)), n(3) )
-    /// assert_eq!( l2n.get(n(2)), n(3 * 3) )       // 9
-    /// //assert_eq!( l2n.get(n(3)), n(3 * 9 * 2) )   // 54
-    /// assert_eq!( l2n.get(n(4)), n(3 * 54 * 2 + 9 * 9) )
-    /// ```
-    fn get(&mut self, len: &usize) -> GN {
-        let idx = len - 1;
-        match self.num.get(idx) {
-            Some(n) => n,
-            None => {
-                self.prepare(len);
-                self.num.get(idx).unrwap()
-            }
+    pub fn decompose(&mut self, n: GN) -> Option<(GN, GN)> {
+        let s = self.count(n.clone());
+        if s == 0 {
+            return None
         }
+        let n = n - self.acc[s - 1].clone();
+        let (g, t) = sub_rem(n, &self.pair_num[s - 1]);
+        let m = t.clone()       % self.num[g].clone();
+        let d = (t - m.clone()) / self.num[g].clone();
+        Some( (d + self.acc[g].clone(), m + self.acc[s - 1 - g].clone()) )
     }
 }
 
+#[test]
+fn test_gn_builder_count() {
+    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    gnb.prepare_count(4);
+    //assert_eq!( gnb, GNBuilder::new(vec![]) );
+}
 
-
-
-/*
-enum LERed{
-    App {
-        org_gn: BigNum,
-        size: usize,
-        f: BigNum
-        o: BigNum,
-
+#[test]
+fn test_gn_builder_gn() {
+    fn n(i: u32) -> GN {
+        GN::try_from(i).unwrap()
     }
-    Nm {
-    },
-}*/
+    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    gnb.prepare_gn(n(404));
+    //assert_eq!( gnb, GNBuilder::new(vec![]) );
+}
 
+#[test]
+fn test_count() {
+    fn n(i: u32) -> GN {
+        GN::try_from(i).unwrap()
+    }
+    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    assert_eq!( gnb.count(n(    0)), 1 );
+    assert_eq!( gnb.count(n(    2)), 1 );
+    assert_eq!( gnb.count(n(    3)), 2 );
+    assert_eq!( gnb.count(n(   11)), 2 );
+    assert_eq!( gnb.count(n(   12)), 3 );
+    assert_eq!( gnb.count(n(   65)), 3 );
+    assert_eq!( gnb.count(n(   66)), 4 );
+    assert_eq!( gnb.count(n(  470)), 4 );
+    assert_eq!( gnb.count(n(  471)), 5 );
+    assert_eq!( gnb.count(n(3_872)), 5 );
+    assert_eq!( gnb.count(n(3_873)), 6 );
+}
+
+#[test]
+fn test_compose_basic() {
+    fn n(i: u32) -> GN {
+        GN::try_from(i).unwrap()
+    }
+    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    assert_eq!( gnb.compose(n(0), n(0)), n( 3) );
+    assert_eq!( gnb.compose(n(0), n(1)), n( 4) );
+    assert_eq!( gnb.compose(n(0), n(2)), n( 5) );
+    assert_eq!( gnb.compose(n(1), n(0)), n( 6) );
+    assert_eq!( gnb.compose(n(1), n(1)), n( 7) );
+    assert_eq!( gnb.compose(n(1), n(2)), n( 8) );
+    assert_eq!( gnb.compose(n(2), n(0)), n( 9) );
+    assert_eq!( gnb.compose(n(2), n(1)), n(10) );
+    assert_eq!( gnb.compose(n(2), n(2)), n(11) );
+
+    assert_eq!( gnb.compose(n(0), n( 3)), n(12) );
+    assert_eq!( gnb.compose(n(0), n( 4)), n(13) );
+    assert_eq!( gnb.compose(n(0), n( 5)), n(14) );
+    assert_eq!( gnb.compose(n(0), n( 6)), n(15) );
+    assert_eq!( gnb.compose(n(0), n(11)), n(20) );
+    assert_eq!( gnb.compose(n(1), n( 3)), n(21) );
+    assert_eq!( gnb.compose(n(1), n(11)), n(29) );
+    assert_eq!( gnb.compose(n(2), n( 3)), n(30) );
+    assert_eq!( gnb.compose(n(2), n(11)), n(38) );
+    assert_eq!( gnb.compose(n(3), n( 0)), n(39) );
+}
+
+#[test]
+fn test_decompose_basic() {
+    fn n(i: u32) -> GN {
+        GN::try_from(i).unwrap()
+    }
+    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    assert_eq!( gnb.decompose(n(0)), None);
+    assert_eq!( gnb.decompose(n(1)), None);
+    assert_eq!( gnb.decompose(n(2)), None);
+
+    assert_eq!( gnb.decompose(n( 3)), Some((n(0),n(0))) );
+    assert_eq!( gnb.decompose(n( 4)), Some((n(0),n(1))) );
+    assert_eq!( gnb.decompose(n( 5)), Some((n(0),n(2))) );
+    assert_eq!( gnb.decompose(n( 6)), Some((n(1),n(0))) );
+    assert_eq!( gnb.decompose(n( 7)), Some((n(1),n(1))) );
+    assert_eq!( gnb.decompose(n( 8)), Some((n(1),n(2))) );
+    assert_eq!( gnb.decompose(n( 9)), Some((n(2),n(0))) );
+    assert_eq!( gnb.decompose(n(10)), Some((n(2),n(1))) );
+    assert_eq!( gnb.decompose(n(11)), Some((n(2),n(2))) );
+
+    assert_eq!( gnb.decompose(n(12)), Some((n(0),n(3))) );
+    assert_eq!( gnb.decompose(n(13)), Some((n(0),n(4))) );
+    assert_eq!( gnb.decompose(n(14)), Some((n(0),n(5))) );
+    assert_eq!( gnb.decompose(n(15)), Some((n(0),n(6))) );
+    assert_eq!( gnb.decompose(n(20)), Some((n(0),n(11))) );
+    assert_eq!( gnb.decompose(n(21)), Some((n(1),n(3))) );
+    assert_eq!( gnb.decompose(n(29)), Some((n(1),n(11))) );
+    assert_eq!( gnb.decompose(n(30)), Some((n(2),n(3))) );
+    assert_eq!( gnb.decompose(n(38)), Some((n(2),n(11))) );
+    assert_eq!( gnb.decompose(n(39)), Some((n(3),n(0))) );
+}
+/*
+#[test]
+fn test_decompose() {
+    use super::lazy_k_read::read_lazy_k;
+    use super::goedel_number::{lam_to_n};
+    fn test(a: &str, b: &str) {
+        let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+        let a = read_lazy_k(a).unwrap();
+        let b = read_lazy_k(b).unwrap();
+        let (_, na) = lam_to_n(&a.clone());
+        let (_, nb) = lam_to_n(&b.clone());
+        let (_, nab) = lam_to_n(&(a*b));
+        assert_eq!( gnb.decompose(nab), Some((na, nb)) );
+    }
+    test("``ssk", "`ks");
+    test("```kssk", "`s`i`ks");
+}
+*/
