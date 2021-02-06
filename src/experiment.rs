@@ -128,7 +128,8 @@ impl GNBuilder {
     /// the Number of I, K, S
     pub fn count(&mut self, gn: GN) -> usize {
         self.prepare_gn(gn.clone());
-        for c in RevIter::new(self.acc.len() - 1, 0) {
+        //for c in RevIter::new(self.acc.len() - 1, 0) {
+        for c in 0..self.acc.len() {
             if gn < self.acc[c] {
                 return c + 1;
             }
@@ -141,18 +142,23 @@ impl GNBuilder {
         let co = self.count(no.clone());
         let total_cnt = cf.clone() + co.clone();
         self.prepare_count(total_cnt);
-        let d_f = nf - self.acc[cf - 1].clone();
-        let d_o = no - self.acc[co - 1].clone();
-        let dfus: usize = match TryFrom::try_from(d_f) {
-            Ok(n) => n,
-            Err(msg) => panic!(msg),
+
+        let of = match cf {
+            1 => nf,
+            _ => nf - self.acc[cf - 2].clone(),
         };
-        let dous: usize = match TryFrom::try_from(d_o) {
-            Ok(n) => n,
-            Err(msg) => panic!(msg),
+        let oo = match co {
+            1 => no,
+            _ => no - self.acc[co - 2].clone(),
         };
-        self.pair_acc[total_cnt - 1][dfus - 1].clone() + dous - 1
+        let tf = self.num[co - 1].clone();
+
+        if cf > 1 {
+            of * tf + oo + self.pair_acc[total_cnt - 1][cf - 2].clone()
                         + self.acc[total_cnt - 2].clone()
+        } else {
+            of * tf + oo + self.acc[total_cnt - 2].clone()
+        }
     }
 
     pub fn decompose(&mut self, n: GN) -> Option<(GN, GN)> {
@@ -210,23 +216,23 @@ fn test_compose_basic() {
         GN::try_from(i).unwrap()
     }
     let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
-    assert_eq!( gnb.compose(n(0), n(0)), n( 3) );
-    assert_eq!( gnb.compose(n(0), n(1)), n( 4) );
-    assert_eq!( gnb.compose(n(0), n(2)), n( 5) );
-    assert_eq!( gnb.compose(n(1), n(0)), n( 6) );
-    assert_eq!( gnb.compose(n(1), n(1)), n( 7) );
-    assert_eq!( gnb.compose(n(1), n(2)), n( 8) );
-    assert_eq!( gnb.compose(n(2), n(0)), n( 9) );
-    assert_eq!( gnb.compose(n(2), n(1)), n(10) );
-    assert_eq!( gnb.compose(n(2), n(2)), n(11) );
+    assert_eq!( gnb.compose(n(0), n(0)), n( 3) ); // I * I
+    assert_eq!( gnb.compose(n(0), n(1)), n( 4) ); // I * K
+    assert_eq!( gnb.compose(n(0), n(2)), n( 5) ); // I * S
+    assert_eq!( gnb.compose(n(1), n(0)), n( 6) ); // K * I
+    assert_eq!( gnb.compose(n(1), n(1)), n( 7) ); // K * K
+    assert_eq!( gnb.compose(n(1), n(2)), n( 8) ); // K * S
+    assert_eq!( gnb.compose(n(2), n(0)), n( 9) ); // S * I
+    assert_eq!( gnb.compose(n(2), n(1)), n(10) ); // S * K
+    assert_eq!( gnb.compose(n(2), n(2)), n(11) ); // S * S
 
-    assert_eq!( gnb.compose(n(0), n( 3)), n(12) );
-    assert_eq!( gnb.compose(n(0), n( 4)), n(13) );
-    assert_eq!( gnb.compose(n(0), n( 5)), n(14) );
-    assert_eq!( gnb.compose(n(0), n( 6)), n(15) );
-    assert_eq!( gnb.compose(n(0), n(11)), n(20) );
-    assert_eq!( gnb.compose(n(1), n( 3)), n(21) );
-    assert_eq!( gnb.compose(n(1), n(11)), n(29) );
+    assert_eq!( gnb.compose(n(0), n( 3)), n(12) ); // I * II
+    assert_eq!( gnb.compose(n(0), n( 4)), n(13) ); // I * IK
+    assert_eq!( gnb.compose(n(0), n( 5)), n(14) ); // I * IS
+    assert_eq!( gnb.compose(n(0), n( 6)), n(15) ); // I * KI
+    assert_eq!( gnb.compose(n(0), n(11)), n(20) ); // I * SS
+    assert_eq!( gnb.compose(n(1), n( 3)), n(21) ); // K * II
+    assert_eq!( gnb.compose(n(1), n(11)), n(29) ); // K * SS
     assert_eq!( gnb.compose(n(2), n( 3)), n(30) );
     assert_eq!( gnb.compose(n(2), n(11)), n(38) );
     assert_eq!( gnb.compose(n(3), n( 0)), n(39) );
