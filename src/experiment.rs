@@ -137,20 +137,27 @@ impl GNBuilder {
     }
 
     pub fn compose(&mut self, nf: GN, no: GN) -> GN {
-        let sf = self.count(nf.clone());
-        let so = self.count(no.clone());
-        let total_cnt = sf.clone() + so.clone();
+        let cf = self.count(nf.clone());
+        let co = self.count(no.clone());
+        let total_cnt = cf.clone() + co.clone();
         self.prepare_count(total_cnt);
-        let (_, nf2) = sub_rem(nf, &self.acc);
-        let (_, no2) = sub_rem(no, &self.acc);
-        self.num[sf - 1].clone() * nf2 + no2
-                    + self.pair_acc[total_cnt - 1][sf - 1].clone()
-                        + self.acc[total_cnt - 1].clone()
+        let d_f = nf - self.acc[cf - 1].clone();
+        let d_o = no - self.acc[co - 1].clone();
+        let dfus: usize = match TryFrom::try_from(d_f) {
+            Ok(n) => n,
+            Err(msg) => panic!(msg),
+        };
+        let dous: usize = match TryFrom::try_from(d_o) {
+            Ok(n) => n,
+            Err(msg) => panic!(msg),
+        };
+        self.pair_acc[total_cnt - 1][dfus - 1].clone() + dous - 1
+                        + self.acc[total_cnt - 2].clone()
     }
 
     pub fn decompose(&mut self, n: GN) -> Option<(GN, GN)> {
         let s = self.count(n.clone());
-        if s == 0 {
+        if s == 1 {
             return None
         }
         let n = n - self.acc[s - 1].clone();
