@@ -97,12 +97,12 @@ impl GNBuilder {
             Some(_) => (),
             None => {
                 self.prepare_count(cnt - 1);
-                let mut pnum = Vec::new();
-                let mut pacc = Vec::new();
+                let mut pnum = vec![];
+                let mut pacc = vec![Zero::zero()];
                 let mut sum: GN = Zero::zero();
                 for i in 1 .. cnt {
                     pnum.push(self.num[i].clone()
-                              * self.num[cnt - i - 1].clone());
+                              * self.num[cnt - i].clone());
                     sum += pnum[pnum.len() - 1].clone();
                     pacc.push(sum.clone());
                 }
