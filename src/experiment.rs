@@ -125,7 +125,7 @@ impl GNBuilder {
     }
 
     /// the Number of I, K, S
-    pub fn count(&mut self, gn: GN) -> usize {
+    fn count(&mut self, gn: GN) -> usize {
         self.prepare_gn(gn.clone());
         for c in 0..self.acc.len() {
             if gn < self.acc[c] {
@@ -160,6 +160,34 @@ impl GNBuilder {
         Some( (od + self.acc[g].clone(),
                 om + self.acc[cnt - g - 2].clone()) )
     }
+
+    pub fn gn_to_lam(&mut self, n: GN) -> PLamExpr {
+        match self.decompose(n.clone()) {
+            Some((f, o)) => self.gn_to_lam(f) * self.gn_to_lam(o),
+            None => lazy_k_core::nm(&self.base[usize::try_from(n).unwrap()]),
+        }
+    }
+
+    pub fn lam_to_gn(&mut self, lam: &PLamExpr) -> GN {
+        match lam.extract() {
+            LamExpr::Nm { name } => {
+                for n in 0..self.base.len() {
+                    if **name == self.base[n] {
+                        return GN::try_from(n).unwrap();
+                    }
+                }
+                panic!("lam_to_n: Nm");
+            }
+            LamExpr::App { func, oprd, size } => {
+                let f = self.lam_to_gn(func);
+                let o = self.lam_to_gn(oprd);
+                self.prepare_count((size + 1) / 2);
+                self.compose(f, o)
+            }
+            _ => panic!("lam_to_gn: other"),
+        }
+    }
+
 }
 
 #[test]
