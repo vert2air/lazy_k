@@ -140,11 +140,9 @@ impl GNBuilder {
         let co = self.count(no.clone());
         let total_cnt = cf.clone() + co.clone();
         self.prepare_count(total_cnt);
-
         let of = nf - self.acc[cf - 1].clone();
         let oo = no - self.acc[co - 1].clone();
         let tf = self.num[co].clone();
-
         of * tf + oo + self.pair_acc[total_cnt][cf - 1].clone()
                     + self.acc[total_cnt - 1].clone()
     }
@@ -157,8 +155,8 @@ impl GNBuilder {
         }
         let on = n - self.acc[cnt - 1].clone();
         let (g, t) = sub_rem(on, &self.pair_num[cnt]);
-        let om = t.clone()       % self.num[g + 1].clone();
-        let od = (t - om.clone()) / self.num[g + 1].clone();
+        let om = t.clone()        % self.num[cnt - (g + 1)].clone();
+        let od = (t - om.clone()) / self.num[cnt - (g + 1)].clone();
         Some( (od + self.acc[g].clone(),
                 om + self.acc[cnt - g - 2].clone()) )
     }
@@ -168,7 +166,7 @@ impl GNBuilder {
 fn test_gn_builder_count() {
     let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
     gnb.prepare_count(4);
-    assert_eq!( gnb, GNBuilder::new(vec![]) );
+    //assert_eq!( gnb, GNBuilder::new(vec![]) );
 }
 
 #[test]
@@ -259,7 +257,7 @@ fn test_decompose_basic() {
     assert_eq!( gnb.decompose(n(38)), Some((n(2),n(11))) );
     assert_eq!( gnb.decompose(n(39)), Some((n(3),n(0))) );
 }
-/*
+
 #[test]
 fn test_decompose() {
     use super::lazy_k_read::read_lazy_k;
@@ -276,4 +274,3 @@ fn test_decompose() {
     test("``ssk", "`ks");
     test("```kssk", "`s`i`ks");
 }
-*/
