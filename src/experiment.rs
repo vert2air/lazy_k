@@ -84,34 +84,33 @@ impl GNBuilder {
     pub fn new(b: Vec<String>) -> Self {
         let ob = GN::try_from(b.len()).unwrap();
         GNBuilder {
-            num: vec![ob.clone()],
-            acc: vec![ob],
-            pair_num: vec![vec![]],
-            pair_acc: vec![vec![]],
+            num: vec![Zero::zero(), ob.clone()],
+            acc: vec![Zero::zero(), ob],
+            pair_num: vec![vec![], vec![Zero::zero()]],
+            pair_acc: vec![vec![], vec![Zero::zero()]],
             base: b,
         }
     }
 
     fn prepare_count(&mut self, cnt: usize) {
-        let idx = cnt - 1;
-        match self.num.get(idx) {
+        match self.num.get(cnt) {
             Some(_) => (),
             None => {
-                self.prepare_count(idx);
+                self.prepare_count(cnt - 1);
                 let mut pnum = Vec::new();
                 let mut pacc = Vec::new();
                 let mut sum: GN = Zero::zero();
-                for i in 0 .. idx {
+                for i in 1 .. cnt {
                     pnum.push(self.num[i].clone()
-                              * self.num[idx - i - 1].clone());
+                              * self.num[cnt - i - 1].clone());
                     sum += pnum[pnum.len() - 1].clone();
                     pacc.push(sum.clone());
                 }
-                self.pair_num.insert(idx, pnum);
-                self.pair_acc.insert(idx, pacc.clone());
-                self.num.insert(idx, pacc[pacc.len() - 1].clone());
-                self.acc.insert(idx, self.num[idx].clone()
-                                    + self.acc[idx - 1].clone());
+                self.pair_num.insert(cnt, pnum);
+                self.pair_acc.insert(cnt, pacc.clone());
+                self.num.insert(cnt, pacc[pacc.len() - 1].clone());
+                self.acc.insert(cnt, self.num[cnt].clone()
+                                    + self.acc[cnt - 1].clone());
             }
         }
     }
@@ -121,20 +120,19 @@ impl GNBuilder {
             if gn < self.acc[self.acc.len() - 1] {
                 break;
             }
-            self.prepare_count(self.acc.len() + 1);
+            self.prepare_count(self.acc.len());
         }
     }
 
     /// the Number of I, K, S
     pub fn count(&mut self, gn: GN) -> usize {
         self.prepare_gn(gn.clone());
-        //for c in RevIter::new(self.acc.len() - 1, 0) {
         for c in 0..self.acc.len() {
             if gn < self.acc[c] {
-                return c + 1;
+                return c;
             }
         }
-        0
+        0 // dummy, never reach here.
     }
 
     pub fn compose(&mut self, nf: GN, no: GN) -> GN {
@@ -143,22 +141,12 @@ impl GNBuilder {
         let total_cnt = cf.clone() + co.clone();
         self.prepare_count(total_cnt);
 
-        let of = match cf {
-            1 => nf,
-            _ => nf - self.acc[cf - 2].clone(),
-        };
-        let oo = match co {
-            1 => no,
-            _ => no - self.acc[co - 2].clone(),
-        };
-        let tf = self.num[co - 1].clone();
+        let of = nf - self.acc[cf - 1].clone();
+        let oo = no - self.acc[co - 1].clone();
+        let tf = self.num[co].clone();
 
-        if cf > 1 {
-            of * tf + oo + self.pair_acc[total_cnt - 1][cf - 2].clone()
-                        + self.acc[total_cnt - 2].clone()
-        } else {
-            of * tf + oo + self.acc[total_cnt - 2].clone()
-        }
+        of * tf + oo + self.pair_acc[total_cnt][cf - 1].clone()
+                    + self.acc[total_cnt - 1].clone()
     }
 
     pub fn decompose(&mut self, n: GN) -> Option<(GN, GN)> {
@@ -178,7 +166,7 @@ impl GNBuilder {
 fn test_gn_builder_count() {
     let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
     gnb.prepare_count(4);
-    //assert_eq!( gnb, GNBuilder::new(vec![]) );
+    assert_eq!( gnb, GNBuilder::new(vec![]) );
 }
 
 #[test]
