@@ -150,15 +150,17 @@ impl GNBuilder {
     }
 
     pub fn decompose(&mut self, n: GN) -> Option<(GN, GN)> {
-        let s = self.count(n.clone());
-        if s == 1 {
+        self.prepare_gn(n.clone());
+        let cnt = self.count(n.clone());
+        if cnt == 1 {
             return None
         }
-        let n = n - self.acc[s - 1].clone();
-        let (g, t) = sub_rem(n, &self.pair_num[s - 1]);
-        let m = t.clone()       % self.num[g].clone();
-        let d = (t - m.clone()) / self.num[g].clone();
-        Some( (d + self.acc[g].clone(), m + self.acc[s - 1 - g].clone()) )
+        let on = n - self.acc[cnt - 1].clone();
+        let (g, t) = sub_rem(on, &self.pair_num[cnt]);
+        let om = t.clone()       % self.num[g + 1].clone();
+        let od = (t - om.clone()) / self.num[g + 1].clone();
+        Some( (od + self.acc[g].clone(),
+                om + self.acc[cnt - g - 2].clone()) )
     }
 }
 
