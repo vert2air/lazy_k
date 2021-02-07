@@ -68,10 +68,10 @@ fn inc(map: &mut BTreeMap<BigInt, u32>, idx: BigInt) {
     };
 }
 
-type GN = BigInt;
+pub type GN = BigInt;
 
 #[derive(PartialEq, Eq, Debug)]
-struct GNBuilder {
+pub struct GNBuilder {
     num: Vec<GN>,
     acc: Vec<GN>,
     pair_num: Vec<Vec<GN>>,
@@ -161,10 +161,64 @@ impl GNBuilder {
                 om + self.acc[cnt - g - 2].clone()) )
     }
 
+    /// ```
+    /// use lazy_k::experiment::{GNBuilder, GN};
+    /// use lazy_k::lazy_k_read::read_lazy_k;
+    /// use lazy_k::goedel_number::n_to_unlam;
+    /// use std::convert::TryFrom;
+    /// use num_bigint::BigInt;
+    /// 
+    /// fn bn(a: i32) -> GN {
+    ///     match GN::try_from(a) {
+    ///         Ok(a2) => a2,
+    ///         _ => panic!("bn"),
+    ///     }
+    /// }
+    /// let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+    ///                         .into_iter().map(|x| x.to_string()).collect());
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 0)) ), read_lazy_k("i")     );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 1)) ), read_lazy_k("k")     );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 2)) ), read_lazy_k("s")     );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 3)) ), read_lazy_k("`ii")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 4)) ), read_lazy_k("`ik")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 5)) ), read_lazy_k("`is")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 6)) ), read_lazy_k("`ki")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 7)) ), read_lazy_k("`kk")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 8)) ), read_lazy_k("`ks")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn( 9)) ), read_lazy_k("`si")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn(10)) ), read_lazy_k("`sk")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn(11)) ), read_lazy_k("`ss")   );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn(56)) ), read_lazy_k("``kss") );
+    /// assert_eq!( Ok( gnb.gn_to_lam(bn(60)) ), read_lazy_k("``ski") );
+    /// ```
     pub fn gn_to_lam(&mut self, n: GN) -> PLamExpr {
         match self.decompose(n.clone()) {
             Some((f, o)) => self.gn_to_lam(f) * self.gn_to_lam(o),
             None => lazy_k_core::nm(&self.base[usize::try_from(n).unwrap()]),
+        }
+    }
+
+    pub fn gn_to_min_lam(&mut self, n: GN) -> Option<PLamExpr> {
+        match self.decompose(n.clone()) {
+            None => return
+                Some(lazy_k_core::nm(&self.base[usize::try_from(n).unwrap()])),
+            Some((f1, _)) if f1 == Zero::zero() => return None,
+            Some((f1, _)) if f1 == GN::try_from(10).unwrap() => return None,
+            Some((f1, o1)) => {
+                match self.decompose(f1.clone()) {
+                    Some((f2, _)) if f2 == One::one() => return None,
+                    _ => (),
+                }
+                let f1e = match self.gn_to_min_lam(f1) {
+                    None => return None,
+                    Some(f1e) => f1e,
+                };
+                let o1e = match self.gn_to_min_lam(o1) {
+                    None => return None,
+                    Some(o1e) => o1e,
+                };
+                return Some(f1e * o1e);
+            }
         }
     }
 
@@ -176,7 +230,7 @@ impl GNBuilder {
                         return GN::try_from(n).unwrap();
                     }
                 }
-                panic!("lam_to_n: Nm");
+                panic!("lam_to_gn: Nm");
             }
             LamExpr::App { func, oprd, size } => {
                 let f = self.lam_to_gn(func);
@@ -192,7 +246,8 @@ impl GNBuilder {
 
 #[test]
 fn test_gn_builder_count() {
-    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     gnb.prepare_count(4);
     //assert_eq!( gnb, GNBuilder::new(vec![]) );
 }
@@ -202,7 +257,8 @@ fn test_gn_builder_gn() {
     fn n(i: u32) -> GN {
         GN::try_from(i).unwrap()
     }
-    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     gnb.prepare_gn(n(404));
     //assert_eq!( gnb, GNBuilder::new(vec![]) );
 }
@@ -212,7 +268,8 @@ fn test_count() {
     fn n(i: u32) -> GN {
         GN::try_from(i).unwrap()
     }
-    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     assert_eq!( gnb.count(n(    0)), 1 );
     assert_eq!( gnb.count(n(    2)), 1 );
     assert_eq!( gnb.count(n(    3)), 2 );
@@ -231,7 +288,8 @@ fn test_compose_basic() {
     fn n(i: u32) -> GN {
         GN::try_from(i).unwrap()
     }
-    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     assert_eq!( gnb.compose(n(0), n(0)), n( 3) ); // I * I
     assert_eq!( gnb.compose(n(0), n(1)), n( 4) ); // I * K
     assert_eq!( gnb.compose(n(0), n(2)), n( 5) ); // I * S
@@ -259,7 +317,8 @@ fn test_decompose_basic() {
     fn n(i: u32) -> GN {
         GN::try_from(i).unwrap()
     }
-    let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     assert_eq!( gnb.decompose(n(0)), None);
     assert_eq!( gnb.decompose(n(1)), None);
     assert_eq!( gnb.decompose(n(2)), None);
@@ -289,14 +348,14 @@ fn test_decompose_basic() {
 #[test]
 fn test_decompose() {
     use super::lazy_k_read::read_lazy_k;
-    use super::goedel_number::{lam_to_n};
     fn test(a: &str, b: &str) {
-        let mut gnb = GNBuilder::new(vec!["I".to_string(), "K".to_string(), "S".to_string()]);
+        let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
         let a = read_lazy_k(a).unwrap();
         let b = read_lazy_k(b).unwrap();
-        let (_, na) = lam_to_n(&a.clone());
-        let (_, nb) = lam_to_n(&b.clone());
-        let (_, nab) = lam_to_n(&(a*b));
+        let na = gnb.lam_to_gn(&a.clone());
+        let nb = gnb.lam_to_gn(&b.clone());
+        let nab = gnb.lam_to_gn(&(a*b));
         assert_eq!( gnb.decompose(nab), Some((na, nb)) );
     }
     test("``ssk", "`ks");
