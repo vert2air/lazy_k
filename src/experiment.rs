@@ -6,7 +6,6 @@ use std::fs;
 
 use super::lazy_k_read;
 use super::lazy_k_core;
-use super::rev_iter::RevIter;
 use super::lazy_k_core::{PLamExpr, LamExpr};
 use super::goedel_number;
 use super::goedel_number::{sub_rem};
@@ -77,17 +76,38 @@ pub struct GNBuilder {
     pair_num: Vec<Vec<GN>>,
     pair_acc: Vec<Vec<GN>>,
     base: Vec<String>,
+    i: GN,
+    k: GN,
+    s: GN,
+    sk: GN,
 }
 
 impl GNBuilder {
 
     pub fn new(b: Vec<String>) -> Self {
         let ob = GN::try_from(b.len()).unwrap();
+        let mut i = GN::try_from(-1).unwrap();
+        let mut k = GN::try_from(-1).unwrap();
+        let mut s = GN::try_from(-1).unwrap();
+        let blen = GN::try_from(b.len()).unwrap();
+        for (idx, c) in b.iter().enumerate() {
+            match c {
+                x if x == "I" => i = GN::try_from(idx).unwrap(),
+                x if x == "K" => k = GN::try_from(idx).unwrap(),
+                x if x == "S" => s = GN::try_from(idx).unwrap(),
+                _ => (),
+            }
+        }
         GNBuilder {
             num: vec![Zero::zero(), ob.clone()],
             acc: vec![Zero::zero(), ob],
             pair_num: vec![vec![], vec![Zero::zero()]],
             pair_acc: vec![vec![], vec![Zero::zero()]],
+            i: i,
+            k: k.clone(),
+            s: s.clone(),
+            //sk: blen * (s + One::one()) + k,
+            sk: blen.clone() * s + blen + k,
             base: b,
         }
     }
@@ -202,11 +222,14 @@ impl GNBuilder {
         match self.decompose(n.clone()) {
             None => return
                 Some(lazy_k_core::nm(&self.base[usize::try_from(n).unwrap()])),
-            Some((f1, _)) if f1 == Zero::zero() => return None,
-            Some((f1, _)) if f1 == GN::try_from(10).unwrap() => return None,
+            // I _
+            Some((f1, _)) if f1 == self.i => return None,
+            // S K _
+            Some((f1, _)) if f1 == self.sk => return None,
             Some((f1, o1)) => {
                 match self.decompose(f1.clone()) {
-                    Some((f2, _)) if f2 == One::one() => return None,
+                    // K _ _
+                    Some((f2, _)) if f2 == self.k => return None,
                     _ => (),
                 }
                 let f1e = match self.gn_to_min_lam(f1) {
@@ -242,6 +265,129 @@ impl GNBuilder {
         }
     }
 
+    fn beta_red_cc(&mut self, not_reduce_s_yet: &mut bool, gn: GN) ->
+                                                                Option<GN> {
+        match self.decompose(gn) {
+            None => None,
+
+            // I o1 ==beta=> o1
+            Some((f1, o1)) if f1 == self.i => Some(o1),
+
+            // (K|S) o1 ==beta=> (K|S) o1
+            Some((f1, o1)) if (f1 == self.k) || (f1 == self.s) => {
+                match self.beta_red_cc(not_reduce_s_yet, o1.clone()) {
+                    None => Some(f1 * o1),
+                    Some(o1n) => Some(f1 * o1n),
+                }
+            }
+
+            // S K o1 ==beta=> I
+            Some((f1, _o1)) if f1 == self.sk => Some(self.i.clone()),
+
+            Some((f1, o1)) => match self.decompose(f1.clone()) {
+                None => None,  // Never come here.
+
+                // I o2 o1 ==beta=> o2 o1
+                Some((f2, o2)) if f2 == self.i => {
+                    match (self.beta_red_cc(not_reduce_s_yet, o2.clone()),
+                            self.beta_red_cc(not_reduce_s_yet, o1.clone())) {
+                        (Some(o2n), Some(o1n)) => Some(self.compose(o2n, o1n)),
+                        (Some(o2n), None     ) => Some(self.compose(o2n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(o2,  o1n)),
+                        (None,      None     ) => Some(self.compose(o2,  o1)),
+                    }
+                }
+
+                // K o2 o1 ==beta=> o2
+                Some((f2, o2)) if f2 == self.k => Some(o2),
+
+                // S o2 o1 ==beta=> S o2 o1
+                Some((f2, o2)) if f2 == self.k => {
+                    match (self.beta_red_cc(not_reduce_s_yet, o2.clone()),
+                            self.beta_red_cc(not_reduce_s_yet, o1.clone())) {
+                        (Some(o2n), Some(o1n)) => {
+                                                let a = self.compose(f2, o2n);
+                                                Some(self.compose(a, o1n))
+                                            }
+                        (Some(o2n), None     ) => {
+                                                let a = self.compose(f2, o2n);
+                                                Some(self.compose(a, o1))
+                                            }
+                        (None,      Some(o1n)) => {
+                                                let a = self.compose(f2, o2);
+                                                Some(self.compose(a, o1n))
+                                            }
+                        (None,      None     ) => None,
+                    }
+                }
+
+                // S K o2 o1 ==beta=> o1
+                Some((f2, _o2)) if f2 == self.sk => Some(o1),
+
+                Some((f2, o2)) => match self.decompose(f2.clone()) {
+
+                    // I o3 o2 o1 ==beta=> o3 o2 o1
+                    Some((f3, o3)) if f3 == self.i => {
+                        let a = self.compose(o3.clone(), o2);
+                        match (self.beta_red_cc(not_reduce_s_yet, a),
+                               self.beta_red_cc(not_reduce_s_yet, o1.clone())) {
+                        (Some(o3n), Some(o1n)) => Some(self.compose(o3n, o1n)),
+                        (Some(o3n), None     ) => Some(self.compose(o3n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(o3, o1n)),
+                        (None,      None     ) => Some(self.compose(o3,  o1)),
+                        }
+                    }
+
+                    // K o3 o2 o1 ==beta=> o3 o1
+                    Some((f3, o3)) if f3 == self.k => {
+                        match (self.beta_red_cc(not_reduce_s_yet, o3.clone()),
+                               self.beta_red_cc(not_reduce_s_yet, o1.clone())) {
+                        (Some(o3n), Some(o1n)) => Some(self.compose(o3n, o1n)),
+                        (Some(o3n), None     ) => Some(self.compose(o3n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(o3, o1n)),
+                        (None,      None     ) => Some(self.compose(o3,  o1)),
+                        }
+                    }
+
+                    // S o3 o2 o1 ==beta=> o3 o1 (o2 o1)
+                    Some((f3, o3)) if f3 == self.s => {
+                        if *not_reduce_s_yet {
+                            *not_reduce_s_yet = false;
+                            let o31 = self.compose(o3, o1.clone());
+                            let o21 = self.compose(o2, o1);
+                            match (self.beta_red_cc(not_reduce_s_yet,
+                                                                o31.clone()),
+                                   self.beta_red_cc(not_reduce_s_yet,
+                                                                o21.clone())) {
+                                (Some(f), Some(o)) => Some(self.compose(f, o)),
+                                (Some(f), None  ) => Some(self.compose(f, o21)),
+                                (None,   Some(o)) => Some(self.compose(o31, o)),
+                                (None,   None ) => Some(self.compose(o31, o21)),
+                            }
+                        } else {
+                            match (self.beta_red_cc(not_reduce_s_yet,
+                                                                f1.clone()),
+                                   self.beta_red_cc(not_reduce_s_yet,
+                                                                o1.clone())) {
+                        (Some(f1n), Some(o1n)) => Some(self.compose(f1n, o1n)),
+                        (Some(f1n), None     ) => Some(self.compose(f1n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(f1, o1n)),
+                        (None,      None     ) => None,
+                            }
+                        }
+                    }
+
+                    _ => match (self.beta_red_cc(not_reduce_s_yet, f1.clone()),
+                                self.beta_red_cc(not_reduce_s_yet, o1.clone())) {
+                        (Some(f1n), Some(o1n)) => Some(self.compose(f1n, o1n)),
+                        (Some(f1n), None     ) => Some(self.compose(f1n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(f1, o1n)),
+                        (None,      None     ) => None,
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[test]
