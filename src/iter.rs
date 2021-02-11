@@ -1,6 +1,5 @@
 use super::lazy_k_core::{LamExpr, PLamExpr, i, k, s};
-use super::goedel_number;
-use super::goedel_number::OurInt;
+use super::goedel_number::{GNBuilder, GN};
 
 pub enum LEIterType {
     All,
@@ -17,30 +16,36 @@ pub struct PLamExprIter {
 
 impl PLamExprIter {
 
-    pub fn new(tp: LEIterType, f: OurInt, t: Option<OurInt>) -> Self {
+    pub fn new(tp: LEIterType, f: GN, t: Option<GN>) -> Self {
         match tp {
             LEIterType::All => Self::new_all(f, t),
             LEIterType::Min => Self::new_min(f, t),
         }
     }
 
-    fn new_all(f: OurInt, t: Option<OurInt>) -> Self {
+    fn new_all(f: GN, t: Option<GN>) -> Self {
+        let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
+        let next_one = Some(gnb.gn_to_lam(f));
+        let to_one = match t {
+            Some(t) => Some(gnb.gn_to_lam(t)),
+            None => None,
+        };
         PLamExprIter {
-            next_one: Some(goedel_number::n_to_unlam(f)),
+            next_one: next_one, 
             last_one: None,
             next_func: Self::next_all,
             need_min: false,
-            to_one: match t {
-                Some(t) => Some(goedel_number::n_to_unlam(t)),
-                None => None,
-            },
+            to_one: to_one,
         }
     }
 
-    fn new_min(f: OurInt, t: Option<OurInt>) -> Self {
-        let an = goedel_number::n_to_unlam(f);
+    fn new_min(f: GN, t: Option<GN>) -> Self {
+        let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
+        let an = gnb.gn_to_lam(f);
         let oto = match t {
-            Some(t) => Some(goedel_number::n_to_unlam(t)),
+            Some(t) => Some(gnb.gn_to_lam(t)),
             None => None,
         };
         if an.is_min() {
@@ -211,9 +216,9 @@ fn test_first_min_size() {
 
 #[test]
 fn test_next_min() {
-    use super::goedel_number;
+    use num_traits::{One};
     use super::lazy_k_read::read_lazy_k;
-    let mut it = PLamExprIter::new(LEIterType::Min, goedel_number::our1(), None);
+    let mut it = PLamExprIter::new(LEIterType::Min, One::one(), None);
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("k").unwrap());
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("s").unwrap());
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("`ki").unwrap());
@@ -230,8 +235,10 @@ fn test_next_min() {
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("`k`ss").unwrap());
     let a = it.next(); assert_eq!(a.unwrap(), read_lazy_k("`s`ki").unwrap());
 
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     let a = read_lazy_k("``s`k``s`si`sik").unwrap();
-    let (_base, gn) = goedel_number::lam_to_n(&a);
+    let gn = gnb.lam_to_gn(&a);
     let mut it = PLamExprIter::new(LEIterType::Min, gn, None);
     it.next();
     let a = it.next();

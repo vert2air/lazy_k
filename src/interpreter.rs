@@ -16,7 +16,7 @@ pub fn exec_lazy_k2(prog_data: PLamExpr) -> Vec<u32> {
         }
     });
     let mut lk = match lk2 {
-        Ok((res, remain)) => res,
+        Ok((res, _remain)) => res,
         Err((_, remain, msg)) => {
             println!("Give up! : {} : {} / 100_000_000", msg, remain);
             return vec![256];
@@ -43,7 +43,7 @@ pub fn exec_lazy_k2(prog_data: PLamExpr) -> Vec<u32> {
 
 pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
     let mut v = Vec::new();
-    let mut lk = prog_data; //[.clone();
+    let mut lk = prog_data;
     /*
     match apply_fully(1_000_000, prog_data, PLamExpr::beta_red_cc, |x| None) {
         Err((r, _, msg)) => {
@@ -74,7 +74,7 @@ pub fn exec_lazy_k(prog_data: PLamExpr) -> Vec<u32> {
             }
         }
         let cdr = s() * i() * (k() * (k() * i()));
-        match apply_fully(50_000, cdr * lk, PLamExpr::beta_red_cc, |x| None) {
+        match apply_fully(50_000, cdr * lk, PLamExpr::beta_red_cc, |_x| None) {
             Err((r, _, msg)) => {
                 println!("msg : {}, len = {}", msg, r.len());
                 lk = r;

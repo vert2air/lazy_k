@@ -1,8 +1,7 @@
-use num_bigint::BigInt;
 use std::convert::TryFrom;
 use std::fs;
 
-use goedel_number::{OurInt, n_to_unlam};
+use goedel_number::{GNBuilder, GN};
 
 pub mod lazy_k_core;
 pub mod iter;
@@ -16,20 +15,24 @@ pub mod traverse_tree;
 pub mod experiment;
 
 pub fn gn_to_unlam(gn_str: &str) {
-    println!("{}", n_to_unlam(str_to_bigint(gn_str)).to_unlam().unwrap());
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
+    println!("{}", gnb.gn_to_lam(str_to_bigint(gn_str)).to_unlam().unwrap());
 }
 
-fn str_to_bigint(s: &str) -> BigInt {
-    match BigInt::parse_bytes(s.as_bytes(), 10) {
+fn str_to_bigint(s: &str) -> GN {
+    match GN::parse_bytes(s.as_bytes(), 10) {
         Some(bi) => bi,
-        None => panic!("cannot convert to BigInt: {}", s),
+        None => panic!("cannot convert to Goedel Number: {}", s),
     }
 }
 
 pub fn unlam_to_gn(unlam: &str) {
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
     match lazy_k_read::read_lazy_k(unlam) {
         Ok(expr) => {
-            let (_, gn) = goedel_number::lam_to_n(&expr);
+            let gn = gnb.lam_to_gn(&expr);
             println!("{}", gn)
         }
         Err(msg) => println!("read_lazy_k Error: {}", msg),
@@ -48,11 +51,11 @@ pub fn mining_between(args: Vec<String>) {
     let (from, to) = match args.len() {
         2 => {
             (
-                //OurInt::try_from(1).unwrap()
-                OurInt::try_from(2_471_450).unwrap()
+                //GN::try_from(1).unwrap()
+                GN::try_from(2_471_450).unwrap()
             ,
                 //Some(OurInt::try_from(100).unwrap())
-                Some(OurInt::try_from(5_471_450).unwrap())
+                Some(GN::try_from(5_471_450).unwrap())
             )
         }
         3 => ( str_to_bigint(&args[2]), None ),
