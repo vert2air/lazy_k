@@ -218,6 +218,26 @@ impl GNBuilder {
         }
     }
 
+    /// Transform an Integer of Goedel Number to Combinator style expression.
+    /// But if there is a shorter Combinator style expression obviously,
+    /// This function returns None.
+    ///
+    /// ```
+    /// use lazy_k::experiment::{GNBuilder, GN};
+    /// use lazy_k::lazy_k_read::read_lazy_k;
+    /// use std::convert::TryFrom;
+    /// 
+    /// fn bn(a: i32) -> GN {
+    ///     GN::try_from(a).unwrap()
+    /// }
+    /// let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+    ///                         .into_iter().map(|x| x.to_string()).collect());
+    /// assert_eq!( gnb.gn_to_min_lam(bn( 3)), None ); // `ii -> i
+    /// assert_eq!( gnb.gn_to_min_lam(bn( 4)), None ); // `ik -> k
+    /// assert_eq!( gnb.gn_to_min_lam(bn( 5)), None ); // `is -> s
+    /// assert_eq!( gnb.gn_to_min_lam(bn(56)), None ); // ``kss -> s (kXY -> Y
+    /// assert_eq!( gnb.gn_to_min_lam(bn(60)), None ); // ``ski -> i
+    /// ```
     pub fn gn_to_min_lam(&mut self, n: GN) -> Option<PLamExpr> {
         match self.decompose(n.clone()) {
             None => return
@@ -245,6 +265,52 @@ impl GNBuilder {
         }
     }
 
+    /// ```
+    /// use lazy_k::experiment::{GNBuilder, GN};
+    /// use lazy_k::lazy_k_read::read_lazy_k;
+    /// use std::convert::TryFrom;
+    /// 
+    /// fn n(num: u32) -> GN {
+    ///     GN::try_from(num).unwrap()
+    /// };
+    /// let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+    ///                         .into_iter().map(|x| x.to_string()).collect());
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("i").unwrap()), n(0));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("k").unwrap()), n(1));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("s").unwrap()), n(2));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`ii").unwrap()), n(3));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`ik").unwrap()), n(4));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`is").unwrap()), n(5));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`ki").unwrap()), n(6));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`kk").unwrap()), n(7));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`ks").unwrap()), n(8));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`si").unwrap()), n(9));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`sk").unwrap()), n(10));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`ss").unwrap()), n(11));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`i`ii").unwrap()), n(12));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`i`ik").unwrap()), n(13));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`i`is").unwrap()), n(14));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("`i`ki").unwrap()), n(15));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("``kss").unwrap()), n(56));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("``ski").unwrap()), n(60));
+    /// 
+    /// let mut gnb = GNBuilder::new(vec!["iota".to_string()]);
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("*ii").unwrap()), n(1));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("*i*ii").unwrap()), n(2));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("**iii").unwrap()), n(3));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("*i*i*ii").unwrap()), n(4));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("*i**iii").unwrap()), n(5));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("**ii*ii").unwrap()), n(6));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("**i*iii").unwrap()), n(7));
+    /// assert_eq!( gnb.lam_to_gn(&read_lazy_k("***iiii").unwrap()), n(8));
+    /// 
+    /// let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+    ///                         .into_iter().map(|x| x.to_string()).collect());
+    /// assert_eq!(gnb.lam_to_gn(&read_lazy_k("``s`k``s`si`kik").unwrap()),
+    ///                                                 n(2_471_467));
+    /// assert_eq!(gnb.lam_to_gn(&read_lazy_k("``s`k``s`si`sik").unwrap()),
+    ///                                                 n(2_471_476));
+    /// ```
     pub fn lam_to_gn(&mut self, lam: &PLamExpr) -> GN {
         match lam.extract() {
             LamExpr::Nm { name } => {
@@ -253,7 +319,7 @@ impl GNBuilder {
                         return GN::try_from(n).unwrap();
                     }
                 }
-                panic!("lam_to_gn: Nm");
+                panic!("lam_to_gn: Nm : {}", name);
             }
             LamExpr::App { func, oprd, size } => {
                 let f = self.lam_to_gn(func);
@@ -265,7 +331,31 @@ impl GNBuilder {
         }
     }
 
-    fn beta_red_cc(&mut self, not_reduce_s_yet: &mut bool, gn: GN) ->
+    /// ```
+    /// use lazy_k::lazy_k_core::{PLamExpr, i, k, s};
+    /// use lazy_k::lazy_k_read::read_lazy_k;
+    /// use lazy_k::experiment::{GNBuilder, GN};
+    /// use num_traits::{Zero, One};
+    ///
+    /// fn str_to_gn(gnb: &mut GNBuilder, lam: &str) -> GN {
+    ///     gnb.lam_to_gn(&read_lazy_k(lam).unwrap())
+    /// }
+    /// let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+    ///                         .into_iter().map(|x| x.to_string()).collect());
+    /// let mut yet = true;
+    /// let a = str_to_gn(&mut gnb, "II");
+    /// let b = str_to_gn(&mut gnb, "I");
+    /// assert_eq!( gnb.beta_red_cc(&mut yet, a), Some(b) );
+    /// let mut yet = true;
+    /// let a = str_to_gn(&mut gnb, "SKSK");
+    /// let b = str_to_gn(&mut gnb, "K");
+    /// assert_eq!( gnb.beta_red_cc(&mut yet, a), Some(b) );
+    /// let mut yet = true;
+    /// let a = str_to_gn(&mut gnb, "KS(KS)");
+    /// let b = str_to_gn(&mut gnb, "S");
+    /// assert_eq!( gnb.beta_red_cc(&mut yet, a), Some(b) );
+    /// ```
+    pub fn beta_red_cc(&mut self, not_reduce_s_yet: &mut bool, gn: GN) ->
                                                                 Option<GN> {
         match self.decompose(gn) {
             None => None,
