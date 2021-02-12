@@ -1,7 +1,7 @@
 extern crate num_traits;
 
 use std::cmp::{PartialOrd, Ordering};
-use std::ops::SubAssign;
+use std::ops::Sub;
 use std::vec::Vec;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -117,7 +117,7 @@ impl GNBuilder {
             return None
         }
         let on = n - self.acc[cnt - 1].clone();
-        let (g, t) = sub_rem(on, &self.pair_num[cnt]);
+        let (g, t) = sub_rem(on, &self.pair_acc[cnt]);
         let om = t.clone()        % self.num[cnt - (g + 1)].clone();
         let od = (t - om.clone()) / self.num[cnt - (g + 1)].clone();
         Some( (od + self.acc[g].clone(),
@@ -428,16 +428,23 @@ impl GNBuilder {
     }
 }
 
-pub fn sub_rem<T: Ord + SubAssign + Clone>(n0: T, ns: &Vec<T>) -> (usize, T) {
-    let mut n = n0;
-    for i in 0 .. ns.len() {
-        if n < ns[i] {
-            return (i, n)
-        } else {
-            n -= ns[i].clone()
+fn sub_rem<T: Ord + Sub<Output = T> + Clone>(n0: T, ns: &Vec<T>) -> (usize, T) {
+    let mut f = 0;
+    let mut t = ns.len() - 1;
+    loop {
+        match t - f {
+            d if d == 0 => return (f, n0 - ns[f].clone()),
+            d if d == 1 => return if n0 < ns[t] { (f, n0 - ns[f].clone()) }
+                                            else { (t, n0 - ns[t].clone()) },
+            _ => (),
+        }
+        let m = (f + t) / 2;
+        match n0.cmp(&ns[m + 1]) {
+            Ordering::Equal => return (m + 1, n0 - ns[m + 1].clone()),
+            Ordering::Less   => t = m,
+            Ordering::Greater => f = m,
         }
     }
-    panic!("sub_rem: Impossible!")
 }
 
 impl PartialOrd for PLamExpr {
@@ -588,14 +595,14 @@ fn test_decompose() {
 
 #[test]
 fn test_sub_rem() {
-    assert_eq!( sub_rem(0, &vec![3]), (0, 0) );
-    assert_eq!( sub_rem(1, &vec![3]), (0, 1) );
-    assert_eq!( sub_rem(2, &vec![3]), (0, 2) );
-    assert_eq!( sub_rem(4, &vec![9, 3]), (0, 4) );
-    assert_eq!( sub_rem(8, &vec![9, 3]), (0, 8) );
-    assert_eq!( sub_rem(9, &vec![9, 3]), (1, 0) );
-    assert_eq!( sub_rem(10, &vec![9, 3]), (1, 1) );
-    assert_eq!( sub_rem(11, &vec![9, 3]), (1, 2) );
+    assert_eq!( sub_rem(0, &vec![0, 3]), (0, 0) );
+    assert_eq!( sub_rem(1, &vec![0, 3]), (0, 1) );
+    assert_eq!( sub_rem(2, &vec![0, 3]), (0, 2) );
+    assert_eq!( sub_rem(4, &vec![0, 9, 12]), (0, 4) );
+    assert_eq!( sub_rem(8, &vec![0, 9, 12]), (0, 8) );
+    assert_eq!( sub_rem(9, &vec![0, 9, 12]), (1, 0) );
+    assert_eq!( sub_rem(10, &vec![0, 9, 12]), (1, 1) );
+    assert_eq!( sub_rem(11, &vec![0, 9, 12]), (1, 2) );
 }
 
 #[test]
