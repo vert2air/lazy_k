@@ -29,6 +29,22 @@ pub fn experiment(args: Vec<String>) {
     }
 }
 
+fn gn_beta_red(e: PLamExpr) {
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
+    let gn = gnb.lam_to_gn(e);
+    let foo = |n| {
+        let mut yet = true;
+        gnb.beta_red_cc(yet, n)
+    }
+    match lazy_k_core::apply_fully(100, gn, foo, |_| None) {
+        Ok(()) => {
+        }
+        Err((r_, _, _)) => {
+        }
+    }
+}
+
 fn ana_tree(e: PLamExpr) {
     let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
                                 .into_iter().map(|x| x.to_string()).collect());
