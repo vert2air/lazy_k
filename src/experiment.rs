@@ -14,14 +14,21 @@ pub fn experiment(args: Vec<String>) {
     let data = fs::read_to_string(&args[3]).unwrap();
     let d = lazy_k_read::read_lazy_k(&data).unwrap();
     let w = p * d;
-    ana_tree(w.clone());
-    println!("");
-    match lazy_k_core::apply_fully(100, w, |x| PLamExpr::beta_red_cc(&x), |_| None) {
-        Err((r, _, _)) => {
-            ana_tree(r.clone());
-            match lazy_k_core::apply_fully(100, r,
+
+    //ana_tree(w.clone());
+    println!("start!!");
+    gn_beta_red(w.clone());
+
+    println!("next!!");
+    match lazy_k_core::apply_fully(50, w, |x| PLamExpr::beta_red_cc(&x), |_| None) {
+        Err((r, c, msg)) => {
+            //ana_tree(r.clone());
+            println!("Tree Done!!");
+            println!("Err! ({}): {}, {}", c, msg, r.len());
+            match lazy_k_core::apply_fully(50, r,
                                 |x| PLamExpr::beta_red_cc(&x), |_| None) {
-                Err((r, _, _)) => ana_tree(r.clone()),
+                Err((r, _, _)) => //ana_tree(r.clone()),
+                    println!("next Err!!"),
                 _ => ()
             }
         }
@@ -32,15 +39,22 @@ pub fn experiment(args: Vec<String>) {
 fn gn_beta_red(e: PLamExpr) {
     let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
                                 .into_iter().map(|x| x.to_string()).collect());
-    let gn = gnb.lam_to_gn(e);
-    let foo = |n| {
+    let gn = gnb.lam_to_gn(&e);
+    println!("translated to GN!!");
+    let foo = |n: &GN| {
         let mut yet = true;
-        gnb.beta_red_cc(yet, n)
-    }
-    match lazy_k_core::apply_fully(100, gn, foo, |_| None) {
-        Ok(()) => {
+        gnb.beta_red_cc(&mut yet, n.clone())
+    };
+    match lazy_k_core::apply_fully(50, gn, foo, |_| None) {
+        Ok((r, c)) => {
+            println!("GN OK Done");
+            let a = gnb.gn_to_lam(r);
+            println!("OK! ({}): {}", c, a.len());
         }
-        Err((r_, _, _)) => {
+        Err((r, c, msg)) => {
+            println!("GN NG Done");
+            let a = gnb.gn_to_lam(r);
+            println!("NG! ({}): {}, {}", c, msg, a.len());
         }
     }
 }
