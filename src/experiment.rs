@@ -2,6 +2,7 @@ use num_traits::{Zero, One};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::fs;
+use std::time::Instant;
 
 use super::lazy_k_read;
 use super::lazy_k_core;
@@ -19,12 +20,18 @@ pub fn experiment(args: Vec<String>) {
     println!("start!!");
     gn_beta_red(w.clone());
 
+    println!("start2!!");
+    gn_beta_red2(w.clone());
+
     println!("next!!");
-    match lazy_k_core::apply_fully(50, w, |x| PLamExpr::beta_red_cc(&x), |_| None) {
+    let start = Instant::now();
+    match lazy_k_core::apply_fully(70, w, |x| PLamExpr::beta_red_cc(&x), |_| None) {
         Err((r, c, msg)) => {
+            let stop = Instant::now();
             //ana_tree(r.clone());
             println!("Tree Done!!");
             println!("Err! ({}): {}, {}", c, msg, r.len());
+            println!("time = {:?}", stop.duration_since(start));
             match lazy_k_core::apply_fully(50, r,
                                 |x| PLamExpr::beta_red_cc(&x), |_| None) {
                 Err((r, _, _)) => //ana_tree(r.clone()),
@@ -45,6 +52,7 @@ fn gn_beta_red(e: PLamExpr) {
         let mut yet = true;
         gnb.beta_red_cc(&mut yet, n.clone())
     };
+    let start = Instant::now();
     match lazy_k_core::apply_fully(50, gn, foo, |_| None) {
         Ok((r, c)) => {
             println!("GN OK Done");
@@ -52,9 +60,37 @@ fn gn_beta_red(e: PLamExpr) {
             println!("OK! ({}): {}", c, a.len());
         }
         Err((r, c, msg)) => {
+            let stop = Instant::now();
             println!("GN NG Done");
             let a = gnb.gn_to_lam(r);
             println!("NG! ({}): {}, {}", c, msg, a.len());
+            println!("time = {:?}", stop.duration_since(start));
+        }
+    }
+}
+
+fn gn_beta_red2(e: PLamExpr) {
+    let mut gnb = GNBuilder::new(vec!["I", "K", "S"]
+                                .into_iter().map(|x| x.to_string()).collect());
+    let gn = gnb.lam_to_gn(&e);
+    println!("translated to GN!!");
+    let foo = |n: &GN| {
+        let mut yet = true;
+        gnb.beta_red_cc2(&mut yet, n.clone())
+    };
+    let start = Instant::now();
+    match lazy_k_core::apply_fully(50, gn, foo, |_| None) {
+        Ok((r, c)) => {
+            println!("GN OK Done");
+            let a = gnb.gn_to_lam(r);
+            println!("OK! ({}): {}", c, a.len());
+        }
+        Err((r, c, msg)) => {
+            let stop = Instant::now();
+            println!("GN NG Done");
+            let a = gnb.gn_to_lam(r);
+            println!("NG! ({}): {}, {}", c, msg, a.len());
+            println!("time = {:?}", stop.duration_since(start));
         }
     }
 }
