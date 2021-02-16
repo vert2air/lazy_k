@@ -475,6 +475,85 @@ impl GNBuilder {
             }
         }
     }
+
+    pub fn beta_red_cc2(&mut self, not_reduce_s_yet: &mut bool, gn: GN) ->
+                                                                Option<GN> {
+        match self.decompose(gn) {
+            None => None,
+
+            // I o1 ==beta=> o1
+            Some((f1, o1)) if f1 == self.i => match self.decompose(o1.clone()) {
+                None => Some(o1),
+                Some((f, o)) => {
+                    let p = self.beta_red_cc(not_reduce_s_yet, f.clone());
+                    let q = self.beta_red_cc(not_reduce_s_yet, o.clone());
+                    match (p, q) {
+                        (Some(f_n), Some(o_n)) => Some(self.compose(f_n, o_n)),
+                        (Some(f_n), None     ) => Some(self.compose(f_n, o)),
+                        (None,      Some(o_n)) => Some(self.compose(f,  o_n)),
+                        (None,      None     ) => Some(o1),
+                    }
+                }
+            }
+
+            // S K o1 ==beta=> I
+            Some((f1, _o1)) if f1 == self.sk => Some(self.i.clone()),
+
+            Some((f1, o1)) => match self.decompose(f1.clone()) {
+                None => None,  // Never come here.
+
+                // K o2 o1 ==beta=> o2
+                Some((f2, o2)) if f2 == self.k => Some(o2),
+
+                // S K o2 o1 ==beta=> o1
+                Some((f2, _o2)) if f2 == self.sk => Some(o1),
+
+                Some((f2, o2)) => match self.decompose(f2.clone()) {
+
+                    // S o3 o2 o1 ==beta=> o3 o1 (o2 o1)
+                    Some((f3, o3)) if f3 == self.s => {
+                        if *not_reduce_s_yet {
+                            *not_reduce_s_yet = false;
+                            let o31 = self.compose(o3, o1.clone());
+                            let o21 = self.compose(o2, o1);
+                            let p = self.beta_red_cc(not_reduce_s_yet,
+                                                                o31.clone());
+                            let q = self.beta_red_cc(not_reduce_s_yet,
+                                                                o21.clone());
+                            match (p, q) {
+                                (Some(f), Some(o)) => Some(self.compose(f, o)),
+                                (Some(f), None  ) => Some(self.compose(f, o21)),
+                                (None,   Some(o)) => Some(self.compose(o31, o)),
+                                (None,   None ) => Some(self.compose(o31, o21)),
+                            }
+                        } else {
+                            let p = self.beta_red_cc(not_reduce_s_yet,
+                                                                f1.clone());
+                            let q = self.beta_red_cc(not_reduce_s_yet,
+                                                                o1.clone());
+                            match (p, q) {
+                        (Some(f1n), Some(o1n)) => Some(self.compose(f1n, o1n)),
+                        (Some(f1n), None     ) => Some(self.compose(f1n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(f1, o1n)),
+                        (None,      None     ) => None,
+                            }
+                        }
+                    }
+
+                    _ => {
+                        let p = self.beta_red_cc(not_reduce_s_yet, f1.clone());
+                        let q = self.beta_red_cc(not_reduce_s_yet, o1.clone());
+                        match (p, q) {
+                        (Some(f1n), Some(o1n)) => Some(self.compose(f1n, o1n)),
+                        (Some(f1n), None     ) => Some(self.compose(f1n, o1)),
+                        (None,      Some(o1n)) => Some(self.compose(f1, o1n)),
+                        (None,      None     ) => None,
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn sub_rem<T: Ord + Sub<Output = T> + Clone>(n0: T, ns: &Vec<T>) -> (usize, T) {
