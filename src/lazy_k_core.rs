@@ -503,10 +503,13 @@ impl PLamExpr {
     /// ```
     /// use crate::lazy_k::lazy_k_core::{PLamExpr, i, k, s};
     ///
-    /// assert_eq!( PLamExpr::beta_red_cc3( &(i() * i()) ), Some(i()) );
-    /// assert_eq!( PLamExpr::beta_red_cc3( &(s() * k() * k() * s()) ),
+    /// let mut not_yet = true;
+    /// assert_eq!( ( &(i() * i()) ).beta_red_cc3(&mut not_yet), Some(i()) );
+    /// let mut not_yet = true;
+    /// assert_eq!( ( &(s() * k() * k() * s()) ).beta_red_cc3(&mut not_yet),
     ///                                                     Some(s()) );
-    /// assert_eq!( PLamExpr::beta_red_cc3(&( k() * s() * (k() * s()) )),
+    /// let mut not_yet = true;
+    /// assert_eq!( (&( k() * s() * (k() * s()) )).beta_red_cc3(&mut not_yet),
     ///                                                     Some(s()) );
     /// ```
     pub fn beta_red_cc3(&self, not_yet: &mut bool) -> Option<Self> {
