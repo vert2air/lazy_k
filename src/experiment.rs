@@ -16,6 +16,9 @@ pub fn experiment(args: Vec<String>) {
     let d = lazy_k_read::read_lazy_k(&data).unwrap();
     let w = p * d;
 
+    let e = lazy_k_read::read_lazy_k("```sii```sii``s``s`kski").unwrap();
+    measure_time(foo, e);
+
     //ana_tree(w.clone());
     println!("start!!");
     gn_beta_red(w.clone());
@@ -41,6 +44,44 @@ pub fn experiment(args: Vec<String>) {
         }
         _ => ()
     }
+
+}
+
+fn measure_time<F>(f: F, e: PLamExpr) where F: Fn(PLamExpr) {
+    println!("Start!!!");
+    let start = Instant::now();
+    f(e);
+    let stop = Instant::now();
+    println!("Finish!!!");
+    println!("measured time = {:?}", stop.duration_since(start));
+}
+
+fn len_chk(e: &PLamExpr) -> Option<String> {
+    if e.len() > 10_000_000 {
+        Some("Space Limit".to_string())
+    } else {
+        None
+    }
+}
+
+fn bar(e: &PLamExpr) -> Option<PLamExpr> {
+    let mut not_yet = true;
+    e.beta_red_cc3(&mut not_yet)
+}
+
+fn foo(e: PLamExpr) {
+    match lazy_k_core::apply_fully(5_000, e, bar, len_chk) {
+        Ok((r, c)) => {
+            println!("OK! ({}): {}: {}", c, r.len(), r.to_cc().unwrap());
+        }
+        Err((r, c, msg)) => {
+            println!("NG! ({}): {}, {}: {}", c, msg, r.len(), r.to_cc().unwrap());
+        }
+    }
+    //let mut one_turn = |x: PLamExpr| -> PLamExpr {
+    //    x.beta_red_cc3(not_yet)
+    //}
+    //apply_full(5_000, e, one_turn, PLamExpr::get_num_n_chk)
 }
 
 fn gn_beta_red(e: PLamExpr) {
