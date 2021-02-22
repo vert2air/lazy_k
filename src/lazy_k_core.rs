@@ -509,8 +509,7 @@ impl PLamExpr {
     /// assert_eq!( PLamExpr::beta_red_cc3(&( k() * s() * (k() * s()) )),
     ///                                                     Some(s()) );
     /// ```
-    pub fn beta_red_cc3(self, not_yet: &mut bool) -> Option<Self> {
-        //use super::lazy_k_core::PLamExpr::beta_red_cc3;
+    pub fn beta_red_cc3(&self, not_yet: &mut bool) -> Option<Self> {
         match &*self.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
 
