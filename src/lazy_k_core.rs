@@ -509,46 +509,47 @@ impl PLamExpr {
     /// assert_eq!( PLamExpr::beta_red_cc3(&( k() * s() * (k() * s()) )),
     ///                                                     Some(s()) );
     /// ```
-    pub fn beta_red_cc3(org: Self, not_yet: &mut bool) -> Option<Self> {
-        match org.0 {
+    pub fn beta_red_cc3(self, not_yet: &mut bool) -> Option<Self> {
+        //use super::lazy_k_core::PLamExpr::beta_red_cc3;
+        match &*self.0 {
             LamExpr::App { func: f1, oprd: o1, .. } => match &*f1.0 {
 
                 // I o1 ==beta=> o1
                 LamExpr::Nm { name } if **name == "I" => {
-                    let o1n = beta_red_cc3(o1.clone(), not_yet);
+                    let o1n = o1.clone().beta_red_cc3(not_yet);
                     match o1n {
-                        None      => Some(o1),
+                        None      => Some(o1.clone()),
                         Some(o1s) => Some(o1s),
                     }
                 }
 
                 // (K|S) o1 ==beta=> (K|S) o1
                 LamExpr::Nm { name } if **name == "K" || **name == "S" => {
-                    let o1n = beta_red_cc3(o1.clone(), not_yet);
+                    let o1n = o1.clone().beta_red_cc3(not_yet);
                     match o1n {
                         None      => None,
-                        Some(o1s) => Some(f1 * o1s),
+                        Some(o1s) => Some(f1.clone() * o1s),
                     }
                 }
 
                 LamExpr::App { func: f2, oprd: o2, .. } => match &*f2.0 {
                     // I o2 o1 ==beta=> o2 o1
                     LamExpr::Nm { name } if **name == "I" => {
-                        let o2n = beta_red_cc3(o2.clone(), not_yet);
-                        let o1n = beta_red_cc3(o1.clone(), not_yet);
+                        let o2n = o2.clone().beta_red_cc3(not_yet);
+                        let o1n = o1.clone().beta_red_cc3(not_yet);
                         match (o2n, o1n) {
                             (Some(o2s), Some(o1s)) => Some(o2s * o1s),
-                            (Some(o2s), None     ) => Some(o2s * o1 ),
-                            (None,      Some(o1s)) => Some(o2  * o1s),
-                            (None,      None     ) => Some(o2  * o1 ),
+                            (Some(o2s), None     ) => Some(o2s * o1.clone()),
+                            (None,  Some(o1s)) => Some(o2.clone() * o1s),
+                            (None,  None     ) => Some(o2.clone() * o1.clone()),
                         }
                     }
 
                     // K o2 o1 ==beta=> o2
-                    LamExpr::Nm { name } if **name == "K" {
-                        let o2n = beta_red_cc3(o2.clone(), not_yet);
+                    LamExpr::Nm { name } if **name == "K" => {
+                        let o2n = o2.clone().beta_red_cc3(not_yet);
                         match o2n {
-                            None      => Some(o2),
+                            None      => Some(o2.clone()),
                             Some(o2s) => Some(o2s),
                         }
                     }
@@ -557,13 +558,16 @@ impl PLamExpr {
 
                     // S o2 o1 ==beta=> S o2 o1
                     LamExpr::Nm { name } if **name == "S" => {
-                        let o2n = beta_red_cc3(o2.clone(), not_yet);
-                        let o1n = beta_red_cc3(o1.clone(), not_yet);
+                        let o2n = o2.clone().beta_red_cc3(not_yet);
+                        let o1n = o1.clone().beta_red_cc3(not_yet);
                         match (o2n, o1n) {
-                            (Some(o2s), Some(o1s)) => Some(f2 * o2s * o1s),
-                            (Some(o2s), None     ) => Some(f2 * o2s * o1 ),
-                            (None,      Some(o1s)) => Some(f2 * o2  * o1s),
-                            (None,      None     ) => None,
+                            (Some(o2s), Some(o1s)) =>
+                                            Some(f2.clone() * o2s * o1s),
+                            (Some(o2s), None) =>
+                                            Some(f2.clone() * o2s * o1.clone()),
+                            (None, Some(o1s)) =>
+                                            Some(f2.clone() * o2.clone() * o1s),
+                            (None, None     ) => None,
                         }
                     }
 
@@ -572,24 +576,24 @@ impl PLamExpr {
                         // I o3 o2 o1 ==beta=> o3 o2 o1
                         LamExpr::Nm { name } if **name == "I" => {
                             let o32 = o3.clone() * o2.clone();
-                            let o32n = beta_red_cc3(o32, not_yet);
-                            let o1n = beta_red_cc3(o1.clone(), not_yet);
+                            let o32n = o32.clone().beta_red_cc3(not_yet);
+                            let o1n = o1.clone().beta_red_cc3(not_yet);
                             match (o32n, o1n) {
                                 (Some(o32s), Some(o1s)) => Some(o32s * o1s),
-                                (Some(o32s), None     ) => Some(o32s * o1 ),
-                                (None,       Some(o1s)) => Some(o32  * o1s),
-                                (None,       None     ) => None,
+                                (Some(o32s), None ) => Some(o32s * o1.clone()),
+                                (None,   Some(o1s)) => Some(o32  * o1s),
+                                (None,   None     ) => None,
                             }
                         }
 
                         // K o3 o2 o1 ==beta=> o3 o1
                         LamExpr::Nm { name } if **name == "K" => {
-                            let o3n = beta_red_cc3(o3.clone(), not_yet);
-                            let o1n = beta_red_cc3(o1.clone(), not_yet);
+                            let o3n = o3.clone().beta_red_cc3(not_yet);
+                            let o1n = o1.clone().beta_red_cc3(not_yet);
                             match (o3n, o1n) {
                                 (Some(o3s), Some(o1s)) => Some(o3s * o1s),
-                                (Some(o3s), None     ) => Some(o3s * o1 ),
-                                (None,      Some(o1s)) => Some(o3  * o1s),
+                                (Some(o3s), None    ) => Some(o3s * o1.clone()),
+                                (None,     Some(o1s)) => Some(o3.clone() * o1s),
                                 (None,      None     ) => None,
                             }
                         }
@@ -598,37 +602,37 @@ impl PLamExpr {
 
                             // S K o2 o1 ==beta=> o1
                             LamExpr::Nm { name } if **name == "K" => {
-                                let o1n = beta_red_cc3(o1.clone(), not_yet);
+                                let o1n = o1.clone().beta_red_cc3(not_yet);
                                 match o1n {
-                                    None      => Some(o1),
+                                    None      => Some(o1.clone()),
                                     Some(o1s) => Some(o1s),
                                 }
                             }
 
                             // S o3 o2 o1 ==beta=> o3 o1 (o2 o1)
                             _ => {
-                                let s_red = not_yet;
-                                let all_none = true;
-                                not_yet = false;
-                                let o3c = match beta_red_cc3(o3.clone(),
+                                let s_red = *not_yet;
+                                let mut all_none = true;
+                                *not_yet = false;
+                                let o3c = match o3.clone().beta_red_cc3(
                                                                     not_yet) {
-                                    None => o3,
+                                    None => o3.clone(),
                                     Some(o3s) => {
                                         all_none = false;
                                         o3s
                                     }
                                 };
-                                let o2c = match beta_red_cc3(o2.clone(),
+                                let o2c = match o2.clone().beta_red_cc3(
                                                                     not_yet) {
-                                    None => o2,
+                                    None => o2.clone(),
                                     Some(o2s) => {
                                         all_none = false;
                                         o2s
                                     }
                                 };
-                                let o1c = match beta_red_cc3(o1.clone(),
+                                let o1c = match o1.clone().beta_red_cc3(
                                                                     not_yet) {
-                                    None => o1,
+                                    None => o1.clone(),
                                     Some(o1s) => {
                                         all_none = false;
                                         o1s
@@ -640,7 +644,7 @@ impl PLamExpr {
                                     if all_none {
                                         None
                                     } else {
-                                        Some(f3 * o3c * o2c * o1c)
+                                        Some(f3.clone() * o3c * o2c * o1c)
                                     }
                                 }
                             }
@@ -648,13 +652,13 @@ impl PLamExpr {
 
                         // f3 o3 o2 o1
                         _ => {
-                            let f1n = beta_red_cc3(f1.clone(), not_yet);
-                            let o1n = beta_red_cc3(o1.clone(), not_yet);
+                            let f1n = f1.clone().beta_red_cc3(not_yet);
+                            let o1n = o1.clone().beta_red_cc3(not_yet);
                             match (f1n, o1n) {
                                 (Some(f1s), Some(o1s)) => Some(f1s * o1s),
-                                (Some(f1s), None     ) => Some(f1s * o1 ),
-                                (None,      Some(o1s)) => Some(f1  * o1s),
-                                (None,      None     ) => None,
+                                (Some(f1s), None    ) => Some(f1s * o1.clone()),
+                                (None,     Some(o1s)) => Some(f1.clone() * o1s),
+                                (None,     None     ) => None,
                             }
                         }
                     }
