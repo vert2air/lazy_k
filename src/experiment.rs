@@ -17,7 +17,9 @@ pub fn experiment(args: Vec<String>) {
     let w = p * d;
 
     let e = lazy_k_read::read_lazy_k("```sii```sii``s``s`kski").unwrap();
-    measure_time(foo, e);
+    for _ in 0..10 {
+        measure_time(foo, cc3, e.clone());
+    }
 
     //ana_tree(w.clone());
     println!("start!!");
@@ -47,13 +49,15 @@ pub fn experiment(args: Vec<String>) {
 
 }
 
-fn measure_time<F>(f: F, e: PLamExpr) where F: Fn(PLamExpr) {
-    println!("Start!!!");
+fn measure_time<F, R>(f: F, r: R, e: PLamExpr)
+                //where F: Fn(PLamExpr, fn(&PLamExpr) -> Option<PLamExpr>),
+                where F: Fn(PLamExpr, R),
+                        R: Fn(&PLamExpr) -> Option<PLamExpr> {
+    println!("Timer Start!!!");
     let start = Instant::now();
-    f(e);
+    f(e, r);
     let stop = Instant::now();
-    println!("Finish!!!");
-    println!("measured time = {:?}", stop.duration_since(start));
+    println!("Timer Finish!!! {:?}", stop.duration_since(start));
 }
 
 fn len_chk(e: &PLamExpr) -> Option<String> {
@@ -64,13 +68,21 @@ fn len_chk(e: &PLamExpr) -> Option<String> {
     }
 }
 
-fn bar(e: &PLamExpr) -> Option<PLamExpr> {
+fn cc(e: &PLamExpr) -> Option<PLamExpr> {
+    PLamExpr::beta_red_cc(e)
+}
+
+fn cc2(e: &PLamExpr) -> Option<PLamExpr> {
+    PLamExpr::beta_red_cc2(e)
+}
+
+fn cc3(e: &PLamExpr) -> Option<PLamExpr> {
     let mut not_yet = true;
     e.beta_red_cc3(&mut not_yet)
 }
 
-fn foo(e: PLamExpr) {
-    match lazy_k_core::apply_fully(5_000, e, bar, len_chk) {
+fn foo<R>(e: PLamExpr, red: R) where R: Fn(&PLamExpr) -> Option<PLamExpr> {
+    match lazy_k_core::apply_fully(5_000, e, red, len_chk) {
         Ok((r, c)) => {
             println!("OK! ({}): {}: {}", c, r.len(), r.to_cc().unwrap());
         }
@@ -78,10 +90,6 @@ fn foo(e: PLamExpr) {
             println!("NG! ({}): {}, {}: {}", c, msg, r.len(), r.to_cc().unwrap());
         }
     }
-    //let mut one_turn = |x: PLamExpr| -> PLamExpr {
-    //    x.beta_red_cc3(not_yet)
-    //}
-    //apply_full(5_000, e, one_turn, PLamExpr::get_num_n_chk)
 }
 
 fn gn_beta_red(e: PLamExpr) {
