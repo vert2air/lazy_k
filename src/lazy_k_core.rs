@@ -584,7 +584,7 @@ impl PLamExpr {
                                 (Some(o32s), Some(o1s)) => Some(o32s * o1s),
                                 (Some(o32s), None ) => Some(o32s * o1.clone()),
                                 (None,   Some(o1s)) => Some(o32  * o1s),
-                                (None,   None     ) => None,
+                                (None,   None     ) => Some(o32  * o1.clone()),
                             }
                         }
 
