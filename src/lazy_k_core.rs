@@ -595,8 +595,8 @@ impl PLamExpr {
                             match (o3n, o1n) {
                                 (Some(o3s), Some(o1s)) => Some(o3s * o1s),
                                 (Some(o3s), None    ) => Some(o3s * o1.clone()),
-                                (None,     Some(o1s)) => Some(o3.clone() * o1s),
-                                (None,      None     ) => None,
+                                (None,    Some(o1s)) => Some(o3.clone() * o1s),
+                                (None,  None) => Some(o3.clone() * o1.clone()),
                             }
                         }
 
